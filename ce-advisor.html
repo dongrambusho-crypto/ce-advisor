@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CE-Kalkulationstool – Haushaltsgeräte EN 60335 & RED</title>
+<style>
+:root {
+  --blue:#1a56db; --blue-d:#1239a5; --blue-l:#e8f0fe;
+  --green:#057a55; --green-l:#def7ec;
+  --amber:#92400e; --amber-l:#fef3c7; --amber-b:#fcd34d;
+  --red:#9b1c1c; --red-l:#fee2e2;
+  --purple:#5521b5; --purple-l:#edebfe;
+  --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+  --gray-400:#9ca3af; --gray-600:#4b5563; --gray-800:#1f2937;
+  --border:#d1d5db; --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f4ff;color:var(--gray-800);min-height:100vh}
+/* HEADER */
+header{background:linear-gradient(135deg,#1a56db,#1239a5);color:#fff;padding:18px 28px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.ce-badge{width:48px;height:48px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--blue);letter-spacing:-2px;flex-shrink:0}
+header h1{font-size:20px;font-weight:700}
+header p{font-size:12px;opacity:.85;margin-top:2px}
+/* LAYOUT */
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:24px;margin-bottom:18px;border:1px solid var(--gray-200)}
+.card-title{font-size:15px;font-weight:700;color:var(--blue-d);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.step-circle{width:24px;height:24px;background:var(--blue);color:#fff;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* FORM */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:600;color:var(--gray-600)}
+.hint{font-size:11px;color:var(--gray-400);margin-top:2px}
+.sw{position:relative}
+.sw::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--gray-400);font-size:11px}
+select,input[type=number],input[type=text]{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;color:var(--gray-800);background:#fff;appearance:none;transition:border-color .15s}
+select:focus,input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+/* DEVICE GRID */
+.cat-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.cat-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer;transition:all .15s;color:var(--gray-600)}
+.cat-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.device-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.device-card{padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s;background:#fff}
+.device-card:hover{border-color:var(--blue);background:var(--blue-l)}
+.device-card.selected{border-color:var(--blue);background:var(--blue-l);box-shadow:0 0 0 2px rgba(26,86,219,.2)}
+.device-card .dc-norm{font-size:10px;font-weight:700;color:var(--blue);margin-bottom:3px}
+.device-card .dc-name{font-size:12px;font-weight:600;color:var(--gray-800);line-height:1.3}
+/* TOGGLE SWITCHES */
+.toggle-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.toggle-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.toggle-item:hover{border-color:var(--blue)}
+.toggle-item.on{border-color:var(--blue);background:var(--blue-l);color:var(--blue-d)}
+.toggle-item input{accent-color:var(--blue);width:15px;height:15px}
+/* BUTTON */
+.btn-calc{display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--blue),var(--blue-d));color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(26,86,219,.35);transition:transform .1s}
+.btn-calc:hover{transform:translateY(-1px)}
+.btn-reset{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:#fff;color:var(--gray-600);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:16px;transition:all .15s}
+.btn-reset:hover{border-color:var(--blue);color:var(--blue)}
+/* RESULTS */
+#results{display:none}
+/* SUMMARY CARDS */
+.summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.sum-card{border-radius:10px;padding:16px;text-align:center}
+.sum-card .val{font-size:26px;font-weight:800;line-height:1}
+.sum-card .lbl{font-size:11px;font-weight:600;opacity:.8;margin-top:4px}
+.sum-blue{background:var(--blue);color:#fff}
+.sum-green{background:#057a55;color:#fff}
+.sum-amber{background:#d97706;color:#fff}
+.sum-purple{background:#7c3aed;color:#fff}
+.sum-gray{background:var(--gray-800);color:#fff}
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:20px;overflow-x:auto}
+.tab{padding:9px 16px;font-size:13px;font-weight:600;color:var(--gray-600);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* TEST TABLE */
+.test-table{width:100%;border-collapse:collapse;font-size:13px}
+.test-table th{background:var(--gray-50);padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--gray-200)}
+.test-table td{padding:9px 10px;border-bottom:1px solid var(--gray-100);vertical-align:top}
+.test-table tr:hover td{background:var(--gray-50)}
+.test-table tr.conditional td{background:#fffbeb}
+.test-table tr.na td{background:#f9fafb;opacity:.5}
+.clause-num{font-weight:700;color:var(--blue);font-size:12px;white-space:nowrap}
+.test-name{font-weight:600;color:var(--gray-800)}
+.test-desc{font-size:11px;color:var(--gray-600);margin-top:2px;line-height:1.4}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.badge-yes{background:var(--green-l);color:#065f46}
+.badge-cond{background:var(--amber-l);color:var(--amber)}
+.badge-no{background:var(--gray-100);color:var(--gray-400)}
+.hours-cell{font-weight:700;text-align:right;white-space:nowrap;color:var(--gray-800);font-size:13px}
+.hours-range{font-size:11px;color:var(--gray-400);font-weight:400}
+/* SECTION HEADERS */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gray-50);border-radius:var(--r);margin-bottom:12px;cursor:pointer;border:1px solid var(--gray-200)}
+.section-hdr h3{font-size:13px;font-weight:700;color:var(--gray-800)}
+.section-hdr .shours{font-size:12px;font-weight:700;color:var(--blue)}
+/* COST SECTION */
+.cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px}
+@media(max-width:640px){.cost-grid{grid-template-columns:1fr}}
+.cost-line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:13px}
+.cost-line.total{font-weight:700;font-size:15px;border-bottom:none;padding-top:12px}
+.rate-slider{width:100%;margin-top:4px;accent-color:var(--blue)}
+.info-note{background:var(--blue-l);border:1px solid #93c5fd;border-radius:var(--r);padding:12px 14px;font-size:12px;color:#1e40af;margin-bottom:16px}
+.warn-note{background:var(--amber-l);border:1px solid var(--amber-b);border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--amber);margin-bottom:12px}
+/* PRINT */
+@media print{
+  header,#input-section,.btn-reset,.tabs{display:block!important}
+  .tab-panel{display:block!important}
+  .sum-card{border:2px solid #333;color:#000!important;background:#f0f0f0!important}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ce-badge">CE</div>
+  <div>
+    <h1>CE-Kalkulationstool – Haushaltsgeräte EN 60335 &amp; RED</h1>
+    <p>Prüfplanung und Aufwandskalkulation für EN 60335-1, EN 60335-2-x, EMV (EN 55014) und RED-Richtlinie 2014/53/EU</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ===== INPUT ===== -->
+<div id="input-section">
+
+  <!-- STEP 1: Gerätetyp -->
+  <div class="card">
+    <div class="card-title"><span class="step-circle">1</span> Gerätetyp wählen</div>
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <div class="device-grid" id="device-grid"></div>
+    <div id="selected-info" style="display:none;margin-top:12px;padding:10px 14px;background:var(--blue-l);border-radius:var(--r);border:1.5px solid var(--blue);font-size:13px">
+      <strong id="sel-norm" style="color:var(--blue)"></strong> &nbsp;–&nbsp; <span id="sel-title"></span>
+    </div>
+  </div>
+
+  <!-- STEP 2: Technische Parameter -->
+  <div class="card">
+    <div class="card-title"><span class="step-circle">2</span> Technische Parameter</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Nennspannung (V AC) *</label>
+        <input type="number" id="voltage" value="230" min="0" max="1000">
+      </div>
+      <div class="field">
+        <label>Nennleistung (W) *</label>
+        <input type="number" id="power" value="" placeholder="z.B. 2000" min="0">
+      </div>
+      <div class="field">
+        <label>Nennstrom (A)</label>
+        <input type="number" id="current" placeholder="z.B. 10" min="0" step="0.1">
+      </div>
+      <div class="field">
+        <label>Schutzklasse *</label>
+        <div class="sw">
+          <select id="prot_class">
+            <option value="1">Klasse I – Schutzleiter</option>
+            <option value="2">Klasse II – Doppelisoliert</option>
+            <option value="3">Klasse III – SELV (≤50 V)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>IP-Schutzart</label>
+        <div class="sw">
+          <select id="ip">
+            <option value="ip0x">IP 0x – keine Anforderung</option>
+            <option value="ip20">IP 20 – Finger</option>
+            <option value="ip24">IP 24 – Spritzwasser</option>
+            <option value="ip44">IP 44</option>
+            <option value="ip54">IP 54</option>
+            <option value="ip65">IP 65 – staubdicht + Strahlwasser</option>
+            <option value="ip67">IP 67 – zeitweiliges Eintauchen</option>
+            <option value="ip68">IP 68 – dauerhaftes Eintauchen</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Verwendungsort</label>
+        <div class="sw">
+          <select id="location">
+            <option value="indoor">Innenbereich</option>
+            <option value="outdoor">Außenbereich</option>
+            <option value="both">Innen &amp; Außen</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="field" style="margin-bottom:10px"><label>Geräteeigenschaften (Mehrfachauswahl)</label></div>
+      <div class="toggle-row">
+        <label class="toggle-item" id="t-motor"><input type="checkbox" value="motor"> Motor vorhanden</label>
+        <label class="toggle-item" id="t-heating"><input type="checkbox" value="heating"> Heizelement / Heizdraht</label>
+        <label class="toggle-item" id="t-water"><input type="checkbox" value="water"> Wasserkontakt / Wasserführung</label>
+        <label class="toggle-item" id="t-battery"><input type="checkbox" value="battery"> Akku / Lithium-Batterie</label>
+        <label class="toggle-item" id="t-fixed_conn"><input type="checkbox" value="fixed_conn"> Festanschluss (kein Stecker)</label>
+        <label class="toggle-item" id="t-transformer"><input type="checkbox" value="transformer"> Transformator intern</label>
+        <label class="toggle-item" id="t-display"><input type="checkbox" value="display"> Display / Touch</label>
+        <label class="toggle-item" id="t-timer"><input type="checkbox" value="timer"> Timer / Zeitschaltuhr</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Wireless / RED -->
+  <div class="card">
+    <div class="card-title"><span class="step-circle">3</span> Funk / Wireless (RED-Richtlinie 2014/53/EU)</div>
+    <div class="field" style="margin-bottom:12px"><label>Funktechnologien (Mehrfachauswahl möglich)</label></div>
+    <div class="toggle-row" id="radio-toggles">
+      <label class="toggle-item"><input type="checkbox" name="radio" value="none_radio"> Kein Funk</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="wifi24"> Wi-Fi 2,4 GHz (EN 300 328)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="wifi5"> Wi-Fi 5 GHz (EN 301 893)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="bt"> Bluetooth Classic (EN 300 328)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="ble"> Bluetooth LE / BLE (EN 300 328)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="zigbee"> Zigbee / Thread / Matter (EN 300 328)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="zwave"> Z-Wave 868 MHz (EN 300 220)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="lora"> LoRa 868 MHz (EN 300 220)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="nfc"> NFC (EN 300 330)</label>
+      <label class="toggle-item"><input type="checkbox" name="radio" value="lte"> LTE / 4G / 5G (EN 301 908)</label>
+    </div>
+    <div id="red-extra" style="display:none;margin-top:14px">
+      <div class="grid2">
+        <div class="field">
+          <label>Datenverarbeitung</label>
+          <div class="sw">
+            <select id="data_type">
+              <option value="none">Keine personenbezogenen Daten</option>
+              <option value="personal">Personenbezogene Daten</option>
+              <option value="health">Gesundheitsdaten</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Netzwerkverbindung</label>
+          <div class="sw">
+            <select id="network">
+              <option value="none">Keine Netzwerkverbindung</option>
+              <option value="local">Nur lokales Netzwerk</option>
+              <option value="internet">Internet-verbunden</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Labor-Rate -->
+  <div class="card">
+    <div class="card-title"><span class="step-circle">4</span> Kalkulationsparameter</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Laborstundensatz (€/h): <strong id="rate-display">120</strong> €/h</label>
+        <input type="range" class="rate-slider" id="lab_rate" min="80" max="250" step="5" value="120" oninput="document.getElementById('rate-display').textContent=this.value">
+        <span class="hint">Typisch: 100–160 €/h (akkreditiertes Prüflabor)</span>
+      </div>
+      <div class="field">
+        <label>Anzahl Baumuster (Samples)</label>
+        <input type="number" id="samples" value="3" min="1" max="20">
+        <span class="hint">Prüfaufwand bleibt gleich; Stückkosten variieren</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calculate()">&#x1F4CA; Prüfplan &amp; Kalkulation erstellen</button>
+</div>
+
+<!-- ===== RESULTS ===== -->
+<div id="results">
+  <button class="btn-reset" onclick="resetTool()">&#8592; Neue Kalkulation</button>
+
+  <div class="summary-row" id="summary-row"></div>
+
+  <div class="warn-note" id="warnings-box" style="display:none"></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('t-overview',this)">Übersicht</div>
+    <div class="tab" onclick="switchTab('t-basis',this)">EN 60335-1 (Basisnorm)</div>
+    <div class="tab" onclick="switchTab('t-part2',this)" id="tab-part2">EN 60335-2-x</div>
+    <div class="tab" onclick="switchTab('t-emc',this)">EMV (EN 55014)</div>
+    <div class="tab" id="tab-red" onclick="switchTab('t-red',this)" style="display:none">RED 2014/53/EU</div>
+    <div class="tab" onclick="switchTab('t-cost',this)">Kalkulation</div>
+  </div>
+
+  <div class="tab-panel active" id="t-overview"></div>
+  <div class="tab-panel" id="t-basis"></div>
+  <div class="tab-panel" id="t-part2"></div>
+  <div class="tab-panel" id="t-emc"></div>
+  <div class="tab-panel" id="t-red"></div>
+  <div class="tab-panel" id="t-cost"></div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+
+const CATEGORIES = ['Kochen & Grillen','Heißgetränke','Kühlen & Klima','Reinigung','Textilpflege','Heizen & Warmwasser','Körperpflege','Garten & Außen','Sonstiges'];
+
+const DEVICES = [
+  // Kochen & Grillen
+  {id:'range',cat:'Kochen & Grillen',name:'Herd / Backofen stationär',norm:'EN 60335-2-6',title:'Stationäre Kochherde, Kochplatten, Backöfen und ähnliche Geräte',flags:['heating']},
+  {id:'micro',cat:'Kochen & Grillen',name:'Mikrowellenherd',norm:'EN 60335-2-25',title:'Mikrowellenherde einschl. Kombi-Mikrowellen',flags:['heating']},
+  {id:'toaster',cat:'Kochen & Grillen',name:'Toaster / Grill / Röster',norm:'EN 60335-2-9',title:'Grills, Toaster und ähnliche tragbare Kochgeräte',flags:['heating']},
+  {id:'fryer',cat:'Kochen & Grillen',name:'Fritteuse',norm:'EN 60335-2-13',title:'Fritteusen, Bratpfannen und ähnliche Geräte',flags:['heating']},
+  {id:'kitchen_machine',cat:'Kochen & Grillen',name:'Küchenmaschine / Mixer',norm:'EN 60335-2-14',title:'Küchenmaschinen',flags:['motor']},
+  {id:'bbq',cat:'Kochen & Grillen',name:'Elektrogrill (Outdoor)',norm:'EN 60335-2-78',title:'Elektrische Grillgeräte für den Außenbereich',flags:['heating']},
+  // Heißgetränke
+  {id:'kettle',cat:'Heißgetränke',name:'Wasserkocher',norm:'EN 60335-2-15',title:'Geräte zum Erhitzen von Flüssigkeiten',flags:['heating','water']},
+  {id:'coffee',cat:'Heißgetränke',name:'Kaffeemaschine / Espresso',norm:'EN 60335-2-15',title:'Geräte zum Erhitzen von Flüssigkeiten',flags:['heating','water']},
+  {id:'warming_plate',cat:'Heißgetränke',name:'Warmhalteplatte',norm:'EN 60335-2-12',title:'Warmhalteplatten und ähnliche Geräte',flags:['heating']},
+  // Kühlen & Klima
+  {id:'fridge',cat:'Kühlen & Klima',name:'Kühlschrank / Gefriergerät',norm:'EN 60335-2-24',title:'Kühlgeräte, Speiseeisgeräte und Eiserzeuger',flags:['motor']},
+  {id:'aircon',cat:'Kühlen & Klima',name:'Klimaanlage / Wärmepumpe',norm:'EN 60335-2-40',title:'Elektrische Wärmepumpen, Klimageräte und Entfeuchter',flags:['motor','heating']},
+  {id:'fan',cat:'Kühlen & Klima',name:'Ventilator',norm:'EN 60335-2-80',title:'Ventilatoren',flags:['motor']},
+  {id:'air_purifier',cat:'Kühlen & Klima',name:'Luftreiniger',norm:'EN 60335-2-65',title:'Geräte zur Luftreinigung',flags:['motor']},
+  {id:'humidifier',cat:'Kühlen & Klima',name:'Luftbefeuchter',norm:'EN 60335-2-88',title:'Luftbefeuchter',flags:['motor','water']},
+  {id:'dehumidifier',cat:'Kühlen & Klima',name:'Luftentfeuchter',norm:'EN 60335-2-40',title:'Entfeuchter (vgl. Klimageräte)',flags:['motor','water']},
+  // Reinigung
+  {id:'vacuum',cat:'Reinigung',name:'Staubsauger (Haushalt)',norm:'EN 60335-2-2',title:'Staubsauger und Reinigungsgeräte mit Wasseransaugung',flags:['motor']},
+  {id:'steam_cleaner',cat:'Reinigung',name:'Dampfreiniger / Flächenreiniger',norm:'EN 60335-2-54',title:'Flächenreinigungsgeräte für den Haushaltsgebrauch',flags:['heating','water']},
+  {id:'dishwasher',cat:'Reinigung',name:'Geschirrspüler',norm:'EN 60335-2-5',title:'Geschirrspüler',flags:['motor','water','heating']},
+  {id:'pool_pump',cat:'Reinigung',name:'Pool-/Schwimmbadpumpe',norm:'EN 60335-2-41',title:'Pumpen',flags:['motor','water']},
+  {id:'whirlpool',cat:'Reinigung',name:'Whirlpool-Badewanne',norm:'EN 60335-2-60',title:'Whirlpoolbäder und ähnliche Geräte',flags:['motor','water']},
+  {id:'robot_vac',cat:'Reinigung',name:'Saugroboter',norm:'EN 60335-2-2',title:'Staubsauger (robotergestützt)',flags:['motor','battery']},
+  // Textilpflege
+  {id:'washer',cat:'Textilpflege',name:'Waschmaschine',norm:'EN 60335-2-7',title:'Waschmaschinen',flags:['motor','water']},
+  {id:'dryer',cat:'Textilpflege',name:'Wäschetrockner',norm:'EN 60335-2-11',title:'Wäschetrockner',flags:['motor','heating']},
+  {id:'iron',cat:'Textilpflege',name:'Bügeleisen',norm:'EN 60335-2-3',title:'Elektrische Bügeleisen',flags:['heating']},
+  {id:'steamer',cat:'Textilpflege',name:'Dampfbügler / Kleider­dampfer',norm:'EN 60335-2-85',title:'Kleidungsdampfer',flags:['heating','water']},
+  {id:'ironer',cat:'Textilpflege',name:'Mangel (Bügelmaschine)',norm:'EN 60335-2-44',title:'Mangeln',flags:['motor','heating']},
+  // Heizen & Warmwasser
+  {id:'room_heater',cat:'Heizen & Warmwasser',name:'Raumheizgerät',norm:'EN 60335-2-30',title:'Raumheizgeräte',flags:['heating']},
+  {id:'water_heater_inst',cat:'Heizen & Warmwasser',name:'Durchlauferhitzer',norm:'EN 60335-2-35',title:'Durchlauferhitzer',flags:['heating','water']},
+  {id:'water_heater_stor',cat:'Heizen & Warmwasser',name:'Warmwasserspeicher',norm:'EN 60335-2-21',title:'Elektro-Warmwasserspeicher',flags:['heating','water']},
+  {id:'sauna',cat:'Heizen & Warmwasser',name:'Saunaheizgerät',norm:'EN 60335-2-53',title:'Saunaheizgeräte',flags:['heating']},
+  {id:'immersion',cat:'Heizen & Warmwasser',name:'Tauchsieder',norm:'EN 60335-2-74',title:'Tragbare Tauchsieder',flags:['heating','water']},
+  {id:'towel_rail',cat:'Heizen & Warmwasser',name:'Handtuchheizkörper elektrisch',norm:'EN 60335-2-43',title:'Wäschetrockner und Handtuchhalter',flags:['heating']},
+  // Körperpflege
+  {id:'hairdryer',cat:'Körperpflege',name:'Haartrockner / Föhn',norm:'EN 60335-2-23',title:'Geräte für die Haut- oder Haarpflege',flags:['motor','heating']},
+  {id:'shaver',cat:'Körperpflege',name:'Rasierapparat / Haarschneider',norm:'EN 60335-2-8',title:'Rasier- und Haarschneidegeräte',flags:['motor']},
+  {id:'toothbrush',cat:'Körperpflege',name:'Elektrische Zahnbürste',norm:'EN 60335-2-52',title:'Geräte für Mundhygiene',flags:['motor']},
+  {id:'massage',cat:'Körperpflege',name:'Massagegerät',norm:'EN 60335-2-32',title:'Massagegeräte',flags:['motor']},
+  {id:'charger',cat:'Körperpflege',name:'Batterieladegerät',norm:'EN 60335-2-29',title:'Batterieladegeräte',flags:[]},
+  // Garten & Außen
+  {id:'lawnmower',cat:'Garten & Außen',name:'Rasenmäher (handgeführt)',norm:'EN 60335-2-77',title:'Handgeführte Rasenmäher',flags:['motor']},
+  {id:'robot_mower',cat:'Garten & Außen',name:'Mähroboter',norm:'EN 60335-2-107',title:'Roboterartige Akku-Rasenmäher',flags:['motor','battery']},
+  {id:'gate_drive',cat:'Garten & Außen',name:'Torantrieb / Garagentor',norm:'EN 60335-2-103',title:'Torantriebe',flags:['motor']},
+  {id:'shutter_drive',cat:'Garten & Außen',name:'Rollladenantrieb / Markise',norm:'EN 60335-2-97',title:'Antriebe für Rollläden, Markisen und ähnliche',flags:['motor']},
+  // Sonstiges
+  {id:'aquarium',cat:'Sonstiges',name:'Aquariengeräte (Pumpe/Heizung)',norm:'EN 60335-2-55',title:'Elektrische Geräte für Aquarien',flags:['motor','water','heating']},
+  {id:'insect_killer',cat:'Sonstiges',name:'Insektenvernichter (UV)',norm:'EN 60335-2-59',title:'Insektenvernichter',flags:[]},
+  {id:'pool_heater',cat:'Sonstiges',name:'Poolheizgerät',norm:'EN 60335-2-99',title:'Elektrische Heizgeräte für Schwimmbecken',flags:['heating','water']},
+];
+
+// EN 60335-1 Clauses
+const BASE_TESTS = [
+  {cl:'7',   name:'Kennzeichnung und Anleitungen',        desc:'Vollständigkeit der Beschriftungen, Symbole, Betriebsanleitung in Landessprache, CE-Kennzeichnung',cond:null,  hmin:3, hmax:5},
+  {cl:'8',   name:'Schutz gegen Berühren aktiver Teile',  desc:'Prüfung mit Prüfsonde (Gelenkfinger, Prüfnadel) nach IEC 61032',                                   cond:null,  hmin:2, hmax:4},
+  {cl:'9',   name:'Anlauf motorgetriebener Geräte',       desc:'Anlaufstrom, Motorblockierung, Einschaltdauer bei Nennspannung ±10 %',                              cond:'motor',hmin:2, hmax:4},
+  {cl:'10',  name:'Aufgenommene Leistung und Strom',      desc:'Messung bei Un, 0,94·Un, 1,06·Un – Abgleich mit Typschild',                                        cond:null,  hmin:2, hmax:3},
+  {cl:'11',  name:'Erwärmung (Temperaturanstieg)',        desc:'Thermoelementmessung an allen Prüfpunkten bis thermische Stabilisierung (Δ < 2 K/h)',               cond:null,  hmin:8, hmax:16},
+  {cl:'13',  name:'Kriechstrom und el. Festigkeit (heiß)',desc:'Kriechstrommessung direkt nach Erwärmung, Hochspannungsprüfung 1,06·Un',                           cond:null,  hmin:3, hmax:5},
+  {cl:'14',  name:'Transiente Überspannungen',            desc:'1,2/50 µs Stoßspannungsprüfung entsprechend Überspannungskategorie II',                            cond:null,  hmin:2, hmax:3},
+  {cl:'15',  name:'Feuchtigkeitsbeständigkeit',           desc:'Konditionierung 48 h bei 40 °C / 93 % r.F., anschließend Kriechstrom + Hochspannung',              cond:null,  hmin:6, hmax:10},
+  {cl:'16',  name:'Kriechstrom und el. Festigkeit (kalt)',desc:'Kriechstrommessung und Spannungsfestigkeit im Normalzustand (vor Erwärmung)',                       cond:null,  hmin:2, hmax:4},
+  {cl:'17',  name:'Überlastschutz von Transformatoren',   desc:'Dauerbetrieb unter Kurzschluss bis thermische Stabilisierung – nur bei Sekundärspannung > SELV',    cond:'transformer',hmin:4, hmax:8},
+  {cl:'18',  name:'Dauerbetrieb / Lebensdauer',           desc:'Betriebszyklen gemäß produktspezifischer Norm (Part 2) – oft 10.000–100.000 Zyklen',               cond:null,  hmin:20,hmax:40},
+  {cl:'19',  name:'Anormaler Betrieb',                    desc:'Fehlerszenarien: blockierter Motor, Thermostatkurzschluss/-unterbrechung, Spannungsvariation ±15 %', cond:null,  hmin:6, hmax:12},
+  {cl:'20',  name:'Standfestigkeit und mechanische Gefährdungen',desc:'Kippsicherheit (10°-Test), scharfe Kanten, Quetschstellen, zugängliche Teile',              cond:null,  hmin:2, hmax:4},
+  {cl:'21',  name:'Mechanische Festigkeit',               desc:'Fallprüfung (0,5 m auf Beton), Stoßprüfung 0,5 J, ggf. Schlagprüfung',                            cond:null,  hmin:2, hmax:4},
+  {cl:'22',  name:'Konstruktion (Bauausführung)',         desc:'Besichtigung: Abstände, Kriechstrecken/-luftstrecken, Schutz beweglicher Teile, Isolationsaufbau',  cond:null,  hmin:5, hmax:8},
+  {cl:'23',  name:'Interne Verdrahtung',                  desc:'Besichtigung: Kabelquerschnitt, Befestigung, Schutz gegen scharfe Kanten',                          cond:null,  hmin:1, hmax:2},
+  {cl:'24',  name:'Bauteile (Komponenten)',                desc:'Bewertung kritischer Bauteile: Sicherungen, X/Y-Kondensatoren, Thermoschutz, Relais',               cond:null,  hmin:3, hmax:5},
+  {cl:'25',  name:'Netzanschluss und externe Leitungen',  desc:'Kabeleinführung, Zugentlastung, Biegeradius, Kabelquerschnitt und -typ prüfen',                     cond:null,  hmin:2, hmax:4},
+  {cl:'26',  name:'Klemmen für externe Leiter',           desc:'Nur bei Festanschluss: Klemmkraft, Anzugsmoment, Kriechstrecken an Klemmen',                        cond:'fixed_conn',hmin:2,hmax:3},
+  {cl:'27',  name:'Schutzleiter / Erdung',                desc:'Schutzleiterwiderstand ≤ 0,1 Ω, Zugprüfung, Korrosionsbeständigkeit der Erdungsverbindung',         cond:'class_I',hmin:2,hmax:3},
+  {cl:'28',  name:'Schrauben und Verbindungen',           desc:'Anzugsdrehmomentprüfung nach Tabelle, Lötverbindungsprüfung',                                       cond:null,  hmin:1, hmax:2},
+  {cl:'29',  name:'Kriechstrecken, Luftstrecken, Isolierstrecken',desc:'Messung und Vergleich mit Tabellenwerten für Umgebung und Verschmutzungsgrad',              cond:null,  hmin:3, hmax:5},
+  {cl:'30',  name:'Wärme- und Feuerbeständigkeit',        desc:'Glühdrahtprüfung (750 °C / 960 °C je nach Funktion), Nadelflammprüfung',                           cond:null,  hmin:3, hmax:5},
+  {cl:'31',  name:'Korrosionsbeständigkeit',              desc:'Feuchtklimatest 24 h, Sichtkontrolle auf Rost',                                                     cond:null,  hmin:1, hmax:2},
+  {cl:'32',  name:'Strahlung, Toxizität und ähnliche Gefährdungen',desc:'Messung UV/IR-Strahlung, Analyse von Verbrennungsgasen bei Heizkörpern',                  cond:'radiation',hmin:2,hmax:6},
+];
+
+// Part 2 specific tests per device
+const PART2_TESTS = {
+  range:    [
+    {name:'Kochgefäß-Prüfung',          desc:'Kochen von Wasser, Überlauf, Eintrocknungstest',                               hmin:4,hmax:7},
+    {name:'Einbrennen von Fett',         desc:'Fett-Anbrenntest auf Kochfeld / Backofen bei max. Einstellung',                 hmin:3,hmax:5},
+    {name:'Backofen Temperaturverteilung',desc:'Temperaturprofile an 9 Messpunkten im Garraum',                               hmin:4,hmax:6},
+    {name:'Spillage-Test',               desc:'Überlaufen von Flüssigkeit auf das Kochfeld / in den Backofen',                hmin:2,hmax:4},
+    {name:'Türprüfung (Scharniere)',     desc:'Öffnungs-/Schließzyklen Backofentür (2000 Zyklen)',                            hmin:4,hmax:8},
+    {name:'Heizstab Isolationsprüfung', desc:'Isolationsprüfung der Heizstäbe nach Erwärmung',                               hmin:2,hmax:3},
+  ],
+  micro:    [
+    {name:'Mikrowellenleckmessung',      desc:'Messung HF-Strahlung an Türspalt und Gehäuse (<5 mW/cm² nach IEC 60705)',       hmin:4,hmax:6},
+    {name:'Türverriegelungs-Lebensdauer',desc:'100.000 Öffnungs-/Schließzyklen der Mikrowellentür (Sicherheitsverriegelung)',  hmin:8,hmax:14},
+    {name:'Betrieb ohne Last',           desc:'Mikrowelle 10 min im Leerbetrieb – Schutz durch Abschaltsystem prüfen',         hmin:2,hmax:3},
+    {name:'Lichtbogenprüfung',           desc:'Metallischer Gegenstand im Garraum – Überhitzung, Lichtbogenverhalten',         hmin:2,hmax:4},
+    {name:'Garleistungsmessung',         desc:'Tatsächliche HF-Ausgangsleistung per Wassererwärmung (IEC 60705)',               hmin:3,hmax:5},
+    {name:'Drehteller-Prüfung',          desc:'Mechanik des Drehtellers, Motorabsicherung',                                    hmin:1,hmax:2},
+  ],
+  toaster:  [
+    {name:'Brotkrümel-Tablett-Test',     desc:'Betrieb ohne Krümelschublade – Brandgefahr',                                    hmin:2,hmax:3},
+    {name:'Abwurfmechanismus',           desc:'Zuverlässigkeit des Toast-Auswerfers (1000 Zyklen)',                             hmin:3,hmax:5},
+    {name:'Eingeklemmter Toast-Test',    desc:'Blockierter Hebel / eingeklemmtes Brot – Temperaturanstieg',                    hmin:2,hmax:4},
+    {name:'Wärmeabstrahlung außen',      desc:'Gehäusetemperatur an zugänglichen Stellen',                                     hmin:2,hmax:3},
+  ],
+  fryer:    [
+    {name:'Öltemperatur-Begrenzung',     desc:'Max. Öltemperatur ≤ 250 °C, Thermostat-Abschaltung',                           hmin:3,hmax:5},
+    {name:'Heißöl-Überlauf',             desc:'Einfüllen von Wasser in heißes Öl – Sicherheitsverhalten',                     hmin:2,hmax:4},
+    {name:'Thermostat-Ausfalltest',      desc:'Überbrückter Thermostat – Sicherheitsthermostat muss abschalten',               hmin:2,hmax:4},
+    {name:'Grifftemperatur',             desc:'Temperatur am Griff/Henkel bei Betriebstemperatur',                             hmin:2,hmax:3},
+  ],
+  kitchen_machine:[
+    {name:'Schleuder-/Auswurftest',      desc:'Betrieb ohne Schüssel / mit überbeladenem Behälter',                            hmin:2,hmax:4},
+    {name:'Klingenschutz',               desc:'Zugänglichkeit der Messer mit Prüfsonde während des Betriebs',                  hmin:2,hmax:3},
+    {name:'Schüssel-Sicherung',          desc:'Arretierung der Schüssel / Verriegelung prüfen (Mikroswitch)',                  hmin:2,hmax:3},
+    {name:'Dauerprüfung Motor',          desc:'Kontinuierlicher Betrieb 1000 Zyklen (typisch)',                                hmin:6,hmax:10},
+  ],
+  bbq:      [
+    {name:'Witterungsbeständigkeit',     desc:'IP-Schutz unter Regen-Simulation (IP44 mind.), Salzsprühnebel optional',        hmin:4,hmax:8},
+    {name:'Grillrost-Temperatur',        desc:'Oberflächentemperatur bei max. Einstellung',                                    hmin:3,hmax:5},
+    {name:'Standsicherheit',             desc:'Kipptest auf unebenem Untergrund',                                              hmin:1,hmax:2},
+  ],
+  kettle:   [
+    {name:'Kochtrockenschutz',           desc:'Einschalten ohne Wasser (Boil-dry) – automatische Abschaltung testen',          hmin:3,hmax:5},
+    {name:'Entkalkungssimulation',       desc:'Betrieb mit Kalkwasser, Prüfung nach 50 Zyklen',                               hmin:4,hmax:8},
+    {name:'Ausguss-/Dampfabschirmung',   desc:'Dampfaustritt Richtung und Temperatur prüfen',                                  hmin:2,hmax:3},
+    {name:'Wasseranzeige Dichtheit',     desc:'Sichtfenster-Dichtheit unter Innendruck',                                       hmin:1,hmax:2},
+  ],
+  coffee:   [
+    {name:'Kochtrockenschutz',           desc:'Boil-dry-Test wie Wasserkocher',                                               hmin:3,hmax:5},
+    {name:'Entkalkungstest',             desc:'Leistungserhalt nach simulierter Kalkbildung',                                  hmin:4,hmax:8},
+    {name:'Druckleitungs-Dichtheit',     desc:'Druckprüfung der Brüheinheit (Espresso: bis 15 bar)',                          hmin:3,hmax:5},
+    {name:'Auffangbehälter-Überlauf',    desc:'Überfüllung Wasserbehälter / Überlauf-Sicherheit',                             hmin:1,hmax:2},
+  ],
+  warming_plate:[
+    {name:'Temperaturgleichmäßigkeit',   desc:'Temperaturverteilung auf der Plattenfläche',                                    hmin:2,hmax:3},
+    {name:'Geschirrauflage-Test',        desc:'Verhalten bei nicht-wärmeleitendem Geschirr',                                   hmin:1,hmax:2},
+  ],
+  fridge:   [
+    {name:'Klimaklassen-Prüfung',        desc:'Betrieb bei SN/N/ST/T-Klimaklasse gemäß Typschild',                            hmin:8,hmax:14},
+    {name:'Kältemittel-Sicherheit',      desc:'Prüfung auf Kältemittelleck, Entlüftungstest (R600a: Entzündlichkeit)',         hmin:4,hmax:6},
+    {name:'Türdichtung / Scharniere',    desc:'10.000 Türöffnungszyklen, Dichtheit und Magnetkraft',                           hmin:6,hmax:10},
+    {name:'Kondensatablauf',             desc:'Prüfung Kondensatwanne / -ablauf bei hoher Luftfeuchte',                        hmin:2,hmax:3},
+    {name:'Beleuchtungs-Abschaltung',    desc:'Innenbeleuchtung Abschaltung bei geschlossener Tür',                            hmin:1,hmax:2},
+  ],
+  aircon:   [
+    {name:'Kältemittelprüfung',          desc:'R32/R290 Leckage, Zündgrenze, Mindest-Raumvolumen berechnen',                  hmin:4,hmax:8},
+    {name:'Ventilator-Sicherheit',       desc:'Schutz gegen Berühren rotierender Teile (IP + Prüfsonde)',                     hmin:2,hmax:4},
+    {name:'Vereisungsschutz',            desc:'Verhalten bei Verdampfer-Vereisung (Abtau-Zyklus)',                             hmin:4,hmax:6},
+    {name:'Wasserablauf (Kondensat)',     desc:'Kondensatablauf und Trogdichtheit',                                             hmin:2,hmax:3},
+  ],
+  fan:      [
+    {name:'Fingerschutz Laufrad',        desc:'Prüfsonde darf Laufrad nicht berühren (EN 60335-2-80 Kl. 8)',                  hmin:2,hmax:3},
+    {name:'Kipptest',                    desc:'Standsicherheit bei 10°-Neigung',                                               hmin:1,hmax:2},
+    {name:'Laufrad-Blockiertest',        desc:'Motor bei blockiertem Laufrad – Abschaltung / Thermostat',                     hmin:2,hmax:4},
+  ],
+  air_purifier:[
+    {name:'Filterwirksamkeit (falls angegeben)',desc:'HEPA-Filtertest nach EN 1822 (falls Wirksamkeit beworben)',              hmin:4,hmax:8},
+    {name:'Ozon-Emission (bei UV/Plasma)',desc:'Ozonmessung <0,05 ppm bei 1 m Abstand',                                      hmin:3,hmax:5},
+    {name:'Laufrad-Schutz',              desc:'Prüfsonde: kein Zugang zu Laufrad',                                            hmin:1,hmax:2},
+  ],
+  humidifier:[
+    {name:'Wasserreservoir-Dichtheit',   desc:'Druckprüfung und visuelle Leckprüfung',                                        hmin:2,hmax:3},
+    {name:'Leerprüfung',                 desc:'Betrieb ohne Wasser – automatische Abschaltung',                               hmin:2,hmax:3},
+    {name:'Keimbildung (Heißdampf)',     desc:'Hygienische Sicherheit bei Dampfbefeuchtern (100°C)',                          hmin:2,hmax:4},
+  ],
+  dehumidifier:[
+    {name:'Kondensat-Überlauf',          desc:'Betrieb bei vollem Auffangbehälter – Sicherheitsabschaltung',                  hmin:2,hmax:3},
+    {name:'Kältemittelsicherheit',       desc:'Wie Klimaanlage (anteilig)',                                                   hmin:3,hmax:5},
+  ],
+  vacuum:   [
+    {name:'Saugkraft / Luftstrom',       desc:'Messung Saugdruck und Luftmenge bei Nennbetrieb',                              hmin:2,hmax:4},
+    {name:'Blockierter Lufteinlass',     desc:'Anormaler Betrieb: vollständig blockierte Ansaugöffnung',                      hmin:2,hmax:4},
+    {name:'Kabelaufrollmechanismus',     desc:'Kabelrückzugsprüfung: 1000 Zyklen (bei automatischem Aufroller)',              hmin:2,hmax:4},
+    {name:'Staubfilter (HEPA falls beworben)',desc:'Filtrationsgrad-Messung nach EN 1822, falls angegeben',                   hmin:4,hmax:8},
+    {name:'Schlauch-Biegeprüfung',       desc:'1000 Biegezyklen am Schlauch, elektrische Kontrolle',                         hmin:2,hmax:4},
+  ],
+  steam_cleaner:[
+    {name:'Druckbehälter-Prüfung',       desc:'Wasserkessel: 2-facher Betriebsdruck, 5 min halten',                          hmin:3,hmax:5},
+    {name:'Sicherheitsventil',           desc:'Öffnungsdruck und Funktion des Überdruckventils',                              hmin:2,hmax:3},
+    {name:'Wiederauffüllen unter Druck', desc:'Sicherheit beim Öffnen des Deckels unter Restdruck',                          hmin:2,hmax:4},
+    {name:'Düsen-Reichweite',            desc:'Temperaturen in Betriebsreichweite',                                           hmin:2,hmax:3},
+  ],
+  dishwasher:[
+    {name:'Wasserdichtheit',             desc:'Undichtigkeitsprüfung aller Wasserwege bei Betriebsdruck',                     hmin:3,hmax:5},
+    {name:'Tür-Öffnungssicherheit',      desc:'Betrieb sicher mit halbgeöffneter Tür, Türverriegelung',                      hmin:2,hmax:4},
+    {name:'Sprüharm-Prüfung',            desc:'Verstopfter Sprüharm – Motorbelastung',                                       hmin:2,hmax:3},
+    {name:'Reinigungsmittelkammer',      desc:'Wärmebeständigkeit und Dichtheit Spülmittelbehälter',                         hmin:2,hmax:3},
+    {name:'Wassereinlauf bei Druckschwankung',desc:'Betrieb bei 0,05–1,0 MPa Wasserdruck',                                  hmin:2,hmax:3},
+  ],
+  pool_pump:[
+    {name:'Trockenlauf-Schutz',          desc:'Betrieb ohne Wasser – Abschaltung oder kein Schaden',                         hmin:2,hmax:4},
+    {name:'Förderdruck / NPSH',          desc:'Pumpenkennlinie und Geräuschpegel',                                            hmin:3,hmax:5},
+    {name:'Salzwasserbeständigkeit',     desc:'Korrosionsbeständigkeit bei Salzgehalt (Salzpool)',                            hmin:4,hmax:8},
+  ],
+  whirlpool:[
+    {name:'Erdverbindung im Nassbereich',desc:'Schutzleiterprüfung aller leitfähigen Teile im/am Wasser',                    hmin:3,hmax:5},
+    {name:'Pumpen-Ansaugschutz',         desc:'Ansaugschutz gegen Haare / Körperteile nach EN 60335-2-60',                   hmin:2,hmax:4},
+    {name:'Eintauchprüfung Düsen',       desc:'IP-Schutz der Düsenelemente unter Wasser',                                    hmin:2,hmax:3},
+  ],
+  robot_vac:[
+    {name:'Akku-Sicherheitsprüfung',     desc:'Li-Ion Akkupack: IEC 62133, Überladeschutz, Kurzschluss',                     hmin:4,hmax:8},
+    {name:'Absturz-/Fallsensor',         desc:'Treppensturz-Prüfung, Sensor-Deaktivierung',                                  hmin:2,hmax:4},
+    {name:'Kollisionsschutz',            desc:'Kontaktkraft bei Hindernis-Kollision',                                         hmin:2,hmax:3},
+    {name:'Ladestation-Prüfung',         desc:'Ladegerät nach EN 60335-2-29, Aufladeverhalten',                               hmin:3,hmax:5},
+  ],
+  washer:   [
+    {name:'Schleuderdrehzahl / Unwucht', desc:'Betrieb mit ungleichmäßig beladenem Trommelsystem',                           hmin:3,hmax:6},
+    {name:'Wassermenge / Leckagetest',   desc:'Undichtigkeiten aller Schläuche und Verbindungen unter Druck',                 hmin:2,hmax:4},
+    {name:'Türverriegelung',             desc:'Türsicherheitsschalter bei Schleudergang (Mikroswitch)',                       hmin:2,hmax:4},
+    {name:'Laugenpumpe blockiert',       desc:'Anormaler Betrieb: blockierte Ablaufpumpe',                                    hmin:2,hmax:3},
+    {name:'Dauerprüfung (Waschabläufe)',desc:'Vollständige Programmzyklen (typisch 1000 Zyklen)',                            hmin:10,hmax:20},
+  ],
+  dryer:    [
+    {name:'Flusenfilter-Test',           desc:'Betrieb mit verstopftem Filter – Temperaturbegrenzung',                       hmin:3,hmax:5},
+    {name:'Übertemperatur Trommel',      desc:'Maximale Luftaustrittstemperatur und Richtung',                                hmin:3,hmax:5},
+    {name:'Brandrisiko Flusen',          desc:'Zündverhalten abgesammelter Flusen',                                           hmin:2,hmax:4},
+    {name:'Kondensatbehälter (bei Kondenstrockner)',desc:'Überlauf-Abschaltung Kondensatbehälter',                           hmin:2,hmax:3},
+  ],
+  iron:     [
+    {name:'Dampfdurchsatz',              desc:'Dampfmenge und -temperatur, Sputtering-Test (Dampfspucken)',                   hmin:3,hmax:5},
+    {name:'Entkalkungssimulation',       desc:'Betrieb mit Kalkwasser bis zum Ausfall/Reinigung',                            hmin:4,hmax:8},
+    {name:'Fallprüfung Bügelfläche',     desc:'Fall auf Sohlenplatte – keine Deformation, keine gefährliche Temperatur',     hmin:2,hmax:3},
+    {name:'Sohlplatten-Temperatur',      desc:'Temperatur der Bügelsohle bei max. Stellung',                                  hmin:2,hmax:3},
+  ],
+  steamer:  [
+    {name:'Kessel-Druckprüfung',         desc:'2-facher Betriebsdruck, 5 min, keine Undichtigkeit',                         hmin:3,hmax:5},
+    {name:'Sicherheitsventil',           desc:'Ansprechdruck des Überdruckventils prüfen',                                    hmin:2,hmax:3},
+    {name:'Grifftemperatur',             desc:'Handgriff und alle berührbaren Teile bei max. Dampf',                         hmin:2,hmax:3},
+  ],
+  ironer:   [
+    {name:'Walzenspalte',                desc:'Prüfsonde darf nicht in Walzenspalt gelangen',                                hmin:2,hmax:4},
+    {name:'Sicherheitsabschaltung',      desc:'Not-Stopp und automatische Abschaltung bei Stillstand',                       hmin:2,hmax:3},
+    {name:'Wärmeverteilung Heizplatte',  desc:'Gleichmäßigkeit der Bügelflächentemperatur',                                  hmin:3,hmax:5},
+  ],
+  room_heater:[
+    {name:'Kipptest',                    desc:'Sicherheitsabschaltung beim Kippen (> 45°) – Pflicht',                        hmin:2,hmax:4},
+    {name:'Abdecktest (Zudecken)',       desc:'Gerät mit Decke/Tuch abdecken – Temperaturanstieg',                           hmin:3,hmax:5},
+    {name:'Schutzgitter-Test',           desc:'Zugänglichkeit zum Heizelement durch Gitter – Prüfsonde',                     hmin:2,hmax:3},
+    {name:'Anormaler Betrieb Thermostat',desc:'Überbrückter Raumthermostat – Sicherheitstherm. muss abschalten',             hmin:2,hmax:4},
+  ],
+  water_heater_inst:[
+    {name:'Druckprüfung Wasserwege',     desc:'1,5-facher max. Betriebsdruck, 10 min',                                      hmin:3,hmax:5},
+    {name:'Kochtrockenschutz',           desc:'Betrieb ohne Wasserfluss – Abschaltung des Heizelements',                     hmin:2,hmax:4},
+    {name:'Entkalkungstest',             desc:'Betrieb bis zur Verkalkung, Druckerhöhung',                                   hmin:6,hmax:12},
+    {name:'Mindest-Fördermenge',         desc:'Einschaltschwelle der Durchflussmengen-Steuerung',                            hmin:2,hmax:3},
+  ],
+  water_heater_stor:[
+    {name:'Sicherheitsventil (Druck+Temp)',desc:'Öffnungsdruck und Temperatur des Sicherheitsventils',                      hmin:3,hmax:5},
+    {name:'Kesseldruckprüfung',          desc:'1,3-facher max. Betriebsdruck, 30 min',                                      hmin:3,hmax:5},
+    {name:'Thermische Schichtung',       desc:'Temperaturmessung in 3 Ebenen des Speichers',                                 hmin:4,hmax:6},
+    {name:'Korrosionsbeständigkeit Innenbehälter',desc:'Email/Edelstahl-Prüfung nach EN 60335-2-21',                       hmin:4,hmax:8},
+  ],
+  sauna:    [
+    {name:'Max. Temperatur Saunakabine', desc:'Lufttemperatur max. 110 °C (empfohlen) bei nominaler Einstellung',            hmin:4,hmax:6},
+    {name:'Aufguss-Simulation',          desc:'Wasseraufguss auf Steine – kein Rückspritzen auf spannungsführende Teile',    hmin:2,hmax:4},
+    {name:'Steinbehälter-Sicherheit',    desc:'Befestigung und Sicherheit des Steinbehälters',                               hmin:2,hmax:3},
+    {name:'Anormaler Betrieb Thermostat',desc:'Thermostatausfall – Sicherheitstemperaturbegrenzer',                          hmin:2,hmax:4},
+  ],
+  immersion:[
+    {name:'Freiliegender Heizkörper',    desc:'Betrieb außerhalb der Flüssigkeit – Abschaltung oder kein Brandrisiko',      hmin:2,hmax:4},
+    {name:'Wassertemperatur / Siedeprüfung',desc:'Temperatur direkt am Heizkörper, Kavitation',                             hmin:3,hmax:5},
+  ],
+  towel_rail:[
+    {name:'Trockenlaufschutz (falls flüssigkeitsgefüllt)',desc:'Abschalt-Thermostat bei leerem Körper',                     hmin:2,hmax:4},
+    {name:'Wandbefestigung',             desc:'Mechanische Festigkeit der Wandhalterung (gilt als Teil des Geräts)',         hmin:1,hmax:2},
+  ],
+  hairdryer:[
+    {name:'Schutzgitter Lufteinlass',    desc:'Prüfsonde durch das Gitter – kein Kontakt mit Heizelement/Laufrad',          hmin:2,hmax:4},
+    {name:'Haare-im-Einlass-Test',       desc:'Haare vor Lufteinlass – kein Einzug, keine Brandgefahr',                     hmin:2,hmax:4},
+    {name:'Thermoschutz-Zyklisierung',   desc:'Sicherheitstemperaturbegrenzer: 100 Abschaltzyklen',                         hmin:3,hmax:5},
+    {name:'Badezimmer-Eignung (IPx4)',   desc:'Spritzwasserschutz bei Nassraum-Modellen',                                    hmin:2,hmax:4},
+  ],
+  shaver:   [
+    {name:'Hautschutz (kein Kontakt Messer)',desc:'Prüfsonde durch Scherfolie – keine Berührung Schneidteile',              hmin:2,hmax:4},
+    {name:'Dauerprüfung Motorlager',     desc:'Motorlaufleistung bei Nennbelastung',                                         hmin:4,hmax:8},
+    {name:'Reinigungsstation (Flüssigkeit)',desc:'Dichtheit und elektrische Sicherheit Reinigungsstation mit Alkohol',      hmin:3,hmax:5},
+  ],
+  toothbrush:[
+    {name:'Nassbereich-Sicherheit (IPx7)',desc:'Eintauchen in Wasser – keine Kriechströme',                                 hmin:3,hmax:5},
+    {name:'Mundkontakt-Temperatur',      desc:'Temperatur aller Teile im Mundbereich',                                       hmin:2,hmax:3},
+    {name:'Akkusicherheit',              desc:'Li-Ion: IEC 62133, Überladeschutz, Kurzschluss',                              hmin:4,hmax:6},
+  ],
+  massage:  [
+    {name:'Vibrationsamplitude',         desc:'Messung der Vibrations-/Schlagkraft bei Nennbetrieb',                        hmin:2,hmax:4},
+    {name:'Körperkontakt-Temperatur',    desc:'Temperatur aller Aufsätze / Massageköpfe',                                    hmin:2,hmax:3},
+    {name:'Dauerprüfung Motor',          desc:'Betriebsdauer 500 Zyklen à 30 min',                                          hmin:4,hmax:8},
+  ],
+  charger:  [
+    {name:'Überladeschutz',              desc:'Simulation Akku voll – kein weiteres Laden, keine Erwärmung',                hmin:3,hmax:5},
+    {name:'Falsche Polarität',           desc:'Verpolungsschutz bei falsch eingesetztem Akku',                               hmin:2,hmax:3},
+    {name:'Kurzschluss Ausgang',         desc:'Kurzschluss der Ausgangsklemmen – Sicherung oder Abschaltung',               hmin:2,hmax:3},
+    {name:'Kompatibilitäts-Prüfung',     desc:'Betrieb mit max./min. Akku-Kapazität',                                       hmin:2,hmax:4},
+  ],
+  lawnmower:[
+    {name:'Klingenberührschutz',         desc:'Prüfsonde darf Klinge nicht berühren – ohne und mit Messer-Auslösung',       hmin:3,hmax:5},
+    {name:'Klingenauslauf nach Stop',    desc:'Zeit bis Messerstillstand nach Loslassen der Sicherheitskupplung (< 3 s)',    hmin:2,hmax:4},
+    {name:'Nachwurf-Test',               desc:'Schleuderwirkung von Steinen und Fremdkörpern',                               hmin:3,hmax:6},
+    {name:'Kippsicherheit',              desc:'Betrieb auf geneigtem Untergrund (max. Steigung laut Hersteller)',            hmin:2,hmax:3},
+  ],
+  robot_mower:[
+    {name:'Sicherheits-Abschaltung bei Anheben',desc:'Messer-Stop bei Aufheben des Mähers',                                 hmin:2,hmax:4},
+    {name:'Klingenberührschutz',         desc:'Prüfsonde darf Klinge nicht berühren',                                       hmin:2,hmax:4},
+    {name:'Akkusicherheit (Outdoor)',    desc:'IEC 62133 + Witterungstest Li-Ion',                                           hmin:4,hmax:8},
+    {name:'Begrenzungsdraht-Sicherheit', desc:'Verhalten bei Drahtbruch / Signalverlust',                                   hmin:2,hmax:4},
+    {name:'Kollisionstest',              desc:'Kontaktkraft bei Hindernis ≤ EN-Grenzwert',                                  hmin:2,hmax:3},
+  ],
+  gate_drive:[
+    {name:'Einklemmkraft',               desc:'Zuhaltekraft / Klemmkraft ≤ 150 N (EN 12453)',                               hmin:3,hmax:5},
+    {name:'Sicherheits-Kontaktkante',    desc:'Funktion des Sicherheitsleisten-Sensors',                                     hmin:2,hmax:4},
+    {name:'Manuelle Entriegelung',       desc:'Notöffnung ohne Strom – Funktionsprüfung',                                    hmin:1,hmax:2},
+    {name:'Dauerzyklus-Test',            desc:'10.000 Öffnungs-/Schließzyklen',                                              hmin:8,hmax:16},
+  ],
+  shutter_drive:[
+    {name:'Blockierkraft / Drehmoment',  desc:'Abschalt-Drehmoment bei blockiertem Antrieb',                                hmin:2,hmax:4},
+    {name:'Dauerzyklus-Test',            desc:'10.000 Öffnungs-/Schließzyklen',                                              hmin:8,hmax:14},
+    {name:'Handbetätigung (Notfall)',     desc:'Manuell betätigbar bei Stromausfall',                                         hmin:1,hmax:2},
+  ],
+  aquarium: [
+    {name:'Dauertest Nassbereich',       desc:'Betrieb unter Wasser: Isolationsbeständigkeit nach 1000 h',                  hmin:6,hmax:10},
+    {name:'Pumpen-Trockenlauf',          desc:'Keine Schäden bei kurzzeitigem Trockenlauf',                                  hmin:2,hmax:3},
+    {name:'Heizelement Glasbruch',       desc:'Simulierter Bruch des Heizstabes – elektrische Sicherheit',                  hmin:2,hmax:4},
+  ],
+  insect_killer:[
+    {name:'UV-Strahlungsmessung',        desc:'UV-A Intensität am Aufstellungsort (Reichweite)',                             hmin:2,hmax:4},
+    {name:'Hochspannungs-Gitter',        desc:'Schutz gegen Berühren des Hochspannungsgitters',                              hmin:2,hmax:4},
+    {name:'Fangschalen-Reinigung',       desc:'Sicherheit beim Entleeren im eingeschalteten Zustand',                       hmin:1,hmax:2},
+  ],
+  pool_heater:[
+    {name:'Druckprüfung',                desc:'1,5-facher max. Systemdruck, 10 min',                                        hmin:3,hmax:5},
+    {name:'Chlor-/Salzwasserbeständigkeit',desc:'Materialbeständigkeit gegenüber Pool-Chemikalien',                         hmin:4,hmax:8},
+    {name:'Thermostat-Genauigkeit',      desc:'Einstellgenauigkeit ± 2 °C',                                                 hmin:3,hmax:5},
+  ],
+};
+
+// EMC tests (EN 55014 series) – always for household appliances
+const EMC_TESTS = [
+  {name:'EN 55014-1: Leitungsgebundene Störaussendung',  desc:'Netzgeführte Störspannungen 150 kHz – 30 MHz nach CISPR 14-1',    hmin:4,hmax:7},
+  {name:'EN 55014-1: Gestrahlte Störaussendung',         desc:'Strahlungsemissionen 30 MHz – 300 MHz / 1 GHz (je nach Gerät)',   hmin:6,hmax:10},
+  {name:'EN 55014-2: ESD (Electrostatic Discharge)',     desc:'Entladung ±4 kV Kontakt / ±8 kV Luft an Bedienelemente und Gehäuse', hmin:3,hmax:5},
+  {name:'EN 55014-2: Gestrahlte Immunität (RF)',         desc:'Feldstärke 3 V/m, 80–1000 MHz, AM-moduliert',                    hmin:4,hmax:6},
+  {name:'EN 55014-2: Burst (EFT/B)',                     desc:'Schnelle transiente Störgrößen ±1 kV (Netz) / ±0,5 kV (Signal)', hmin:2,hmax:4},
+  {name:'EN 55014-2: Surge (Stoßspannung)',               desc:'1,2/50 µs 2 kV CM / 1 kV DM',                                   hmin:2,hmax:4},
+  {name:'EN 55014-2: Leitungsgeführte HF-Immunität',     desc:'0,15–80 MHz, 3 V, AM-moduliert über Koppelnetzwerk',             hmin:3,hmax:5},
+  {name:'EN 55014-2: Spannungseinbrüche und Unterbrechungen',desc:'Prüfung nach IEC 61000-4-11',                                hmin:2,hmax:3},
+  {name:'EN 61000-3-2: Oberschwingungsströme',           desc:'Harmonische bis zur 40. Ordnung bei Geräten ≤ 16 A/Phase',       hmin:3,hmax:5},
+  {name:'EN 61000-3-3: Spannungsänderungen und Flicker', desc:'Grenzwerte für kurzzeitige Spannungsänderungen',                  hmin:2,hmax:4},
+];
+
+// RED tests per radio technology
+const RED_TESTS = {
+  wifi24:[
+    {norm:'EN 300 328 v2.2.2',  name:'HF-Ausgangsleistung (EIRP)',          desc:'Spitzenwert und mittlere Leistung aller Kanäle',    hmin:4,hmax:6},
+    {norm:'EN 300 328 v2.2.2',  name:'Frequenzbereich / Kanalraster',        desc:'Trägerfrequenz aller aktiven Kanäle',               hmin:2,hmax:4},
+    {norm:'EN 300 328 v2.2.2',  name:'Duty Cycle',                           desc:'Maximaler Tastgrad pro 100 ms Fenster',             hmin:3,hmax:5},
+    {norm:'EN 300 328 v2.2.2',  name:'Adaptives Frequenzhopping (AFH)',      desc:'Nachweisführung oder Messung AFH-Mechanismus',      hmin:2,hmax:4},
+    {norm:'EN 300 328 v2.2.2',  name:'Spurious Emissions (Nebenaussendungen)',desc:'Außerhalb des ISM-Bands 2400–2483,5 MHz',          hmin:3,hmax:5},
+    {norm:'EN 301 489-1 + -17', name:'EMV unter RED Art. 3.1(b) – Emission', desc:'Leitungsgebunden + gestrahlt (wie EN 55032 light)', hmin:4,hmax:8},
+    {norm:'EN 301 489-17',      name:'EMV unter RED – Immunität',             desc:'ESD, Burst, Surge, HF-Immunität',                  hmin:4,hmax:8},
+    {norm:'EN 62368-1',         name:'Elektrische Sicherheit unter RED Art. 3.1(a)',desc:'Ergänzende Sicherheitsprüfungen (soweit nicht durch EN 60335-1 abgedeckt)',hmin:6,hmax:10},
+  ],
+  wifi5:[
+    {norm:'EN 301 893 v2.1.1',  name:'HF-Ausgangsleistung (EIRP) 5 GHz',    desc:'Alle 5-GHz-Kanäle (UNII-1, -2, -2e, -3)',         hmin:4,hmax:8},
+    {norm:'EN 301 893 v2.1.1',  name:'DFS (Dynamic Frequency Selection)',    desc:'Radar-Erkennung (DFS): 1-min-CAC + 30-min-Off-Channel nach Erkennung', hmin:12,hmax:18},
+    {norm:'EN 301 893 v2.1.1',  name:'TPC (Transmit Power Control)',         desc:'Leistungsreduzierungsmechanismus ≥ 3 dB',          hmin:3,hmax:5},
+    {norm:'EN 301 893 v2.1.1',  name:'Spurious Emissions 5 GHz',            desc:'Aussendungen außerhalb der Bänder',                 hmin:3,hmax:5},
+    {norm:'EN 301 489-1 + -17', name:'EMV unter RED (5 GHz)',                desc:'Wie Wi-Fi 2.4 GHz',                                hmin:4,hmax:8},
+    {norm:'EN 62368-1',         name:'Elektrische Sicherheit unter RED',     desc:'Wie Wi-Fi 2.4 GHz',                                hmin:6,hmax:10},
+  ],
+  bt:[
+    {norm:'EN 300 328 v2.2.2',  name:'HF-Ausgangsleistung Bluetooth',        desc:'Alle 79 BT-Kanäle, Spitzenwert EIRP',             hmin:3,hmax:5},
+    {norm:'EN 300 328 v2.2.2',  name:'FHSS-Mechanismus',                     desc:'Nachweis Frequenzsprungfolge über alle Kanäle',    hmin:2,hmax:4},
+    {norm:'EN 300 328 v2.2.2',  name:'Duty Cycle',                           desc:'Tastgrad-Messung',                                 hmin:2,hmax:3},
+    {norm:'EN 300 328 v2.2.2',  name:'Nebenaussendungen',                    desc:'Spurious Emissions im 2,4-GHz-Band',               hmin:2,hmax:4},
+    {norm:'EN 301 489-1 + -17', name:'EMV unter RED',                        desc:'Emissions- und Immunitätsprüfungen',               hmin:4,hmax:8},
+    {norm:'EN 62368-1',         name:'Elektrische Sicherheit unter RED',     desc:'Ergänzend zu EN 60335-1',                          hmin:4,hmax:8},
+  ],
+  ble:[
+    {norm:'EN 300 328 v2.2.2',  name:'HF-Ausgangsleistung BLE',              desc:'BLE Advertising + Connected Channels',            hmin:2,hmax:4},
+    {norm:'EN 300 328 v2.2.2',  name:'Duty Cycle / Kanalnutzung',            desc:'Adaptive Frequency Hopping BLE',                  hmin:2,hmax:3},
+    {norm:'EN 300 328 v2.2.2',  name:'Nebenaussendungen BLE',                desc:'Spurious Emissions',                              hmin:2,hmax:3},
+    {norm:'EN 301 489-17',      name:'EMV unter RED (BLE)',                  desc:'Wie Bluetooth Classic (anteilig kürzer)',          hmin:4,hmax:7},
+    {norm:'EN 62368-1',         name:'Sicherheit unter RED',                 desc:'Wie Bluetooth Classic',                           hmin:4,hmax:8},
+  ],
+  zigbee:[
+    {norm:'EN 300 328 v2.2.2',  name:'HF-Ausgangsleistung Zigbee/Thread',   desc:'2,4-GHz-Kanäle, typisch ≤ 10 mW EIRP',           hmin:2,hmax:4},
+    {norm:'EN 300 328 v2.2.2',  name:'CSMA/CA Kanalzugriff',                desc:'Nachweis Kollisionsvermeidung',                    hmin:2,hmax:3},
+    {norm:'EN 300 328 v2.2.2',  name:'Nebenaussendungen',                   desc:'Spurious Emissions',                              hmin:2,hmax:3},
+    {norm:'EN 301 489-17',      name:'EMV unter RED',                       desc:'Emission + Immunität',                            hmin:4,hmax:7},
+    {norm:'EN 62368-1',         name:'Sicherheit unter RED',                desc:'',                                                hmin:4,hmax:7},
+  ],
+  zwave:[
+    {norm:'EN 300 220-1/2',     name:'HF-Ausgangsleistung 868 MHz',         desc:'EIRP ≤ 25 mW, Frequenzgenauigkeit',               hmin:2,hmax:4},
+    {norm:'EN 300 220-1/2',     name:'Duty Cycle 868 MHz',                  desc:'Max. 1% Duty Cycle im Sub-Band',                  hmin:2,hmax:3},
+    {norm:'EN 300 220-1/2',     name:'Nebenaussendungen',                   desc:'Spurious < -36 dBm',                              hmin:2,hmax:3},
+    {norm:'EN 301 489-3',       name:'EMV unter RED (SRD)',                 desc:'Emissions- und Immunitätsprüfungen für SRD',      hmin:4,hmax:7},
+    {norm:'EN 62368-1',         name:'Sicherheit unter RED',                desc:'',                                                hmin:4,hmax:7},
+  ],
+  lora:[
+    {norm:'EN 300 220-1/2',     name:'HF-Ausgangsleistung LoRa 868 MHz',   desc:'EIRP, Frequenzen, Duty Cycle EU868',              hmin:2,hmax:4},
+    {norm:'EN 300 220-1/2',     name:'Kanalplan EU868 / Duty Cycle',        desc:'Subband-Duty-Cycles (1% / 0,1%)',                 hmin:2,hmax:4},
+    {norm:'EN 300 220-1/2',     name:'Spurious Emissions',                  desc:'Außerhalb der LoRa-Kanäle',                      hmin:2,hmax:3},
+    {norm:'EN 301 489-3',       name:'EMV unter RED (SRD)',                 desc:'',                                               hmin:4,hmax:7},
+    {norm:'EN 62368-1',         name:'Sicherheit unter RED',                desc:'',                                               hmin:4,hmax:7},
+  ],
+  nfc:[
+    {norm:'EN 300 330',         name:'HF-Feldstärke NFC 13,56 MHz',        desc:'Magnetische Feldstärke in definierten Abständen', hmin:2,hmax:4},
+    {norm:'EN 300 330',         name:'Nebenaussendungen NFC',               desc:'Oberwellen bei 27,12 / 40,68 MHz',               hmin:2,hmax:3},
+    {norm:'EN 301 489-3',       name:'EMV unter RED (NFC)',                 desc:'',                                               hmin:3,hmax:5},
+    {norm:'EN 62368-1',         name:'Sicherheit unter RED',                desc:'',                                               hmin:3,hmax:5},
+  ],
+  lte:[
+    {norm:'EN 301 908-1',       name:'HF-Ausgangsleistung LTE / 5G',       desc:'Alle relevanten Frequenzbänder (Band 1, 3, 7, 20, etc.)',hmin:10,hmax:18},
+    {norm:'EN 301 908-1',       name:'OOB / Spurious Emissions',           desc:'Außerhalb der Nutzkanalbandbreite',               hmin:6,hmax:10},
+    {norm:'EN 301 908-1',       name:'Empfängermerkmale',                  desc:'Blocking, Intermodulation',                      hmin:6,hmax:10},
+    {norm:'EN 301 489-52',      name:'EMV unter RED (LTE/5G)',             desc:'Emissions- und Immunitätsprüfungen für LTE',     hmin:6,hmax:12},
+    {norm:'EN 62368-1',         name:'Sicherheit unter RED',               desc:'SAR-Messung falls Körpernähe < 20 cm',          hmin:8,hmax:14},
+  ],
+};
+
+// ============================================================
+// UI INIT
+// ============================================================
+let selectedDevice = null;
+
+function initDeviceGrid(){
+  const catTabsEl = document.getElementById('cat-tabs');
+  const cats = [...new Set(DEVICES.map(d=>d.cat))];
+  catTabsEl.innerHTML = `<div class="cat-tab active" onclick="filterCat('all',this)">Alle</div>` +
+    cats.map(c=>`<div class="cat-tab" onclick="filterCat('${c}',this)">${c}</div>`).join('');
+  renderDeviceGrid('all');
+}
+
+function filterCat(cat, el){
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderDeviceGrid(cat);
+}
+
+function renderDeviceGrid(cat){
+  const list = cat==='all' ? DEVICES : DEVICES.filter(d=>d.cat===cat);
+  document.getElementById('device-grid').innerHTML = list.map(d=>
+    `<div class="device-card ${selectedDevice&&selectedDevice.id===d.id?'selected':''}" onclick="selectDevice('${d.id}')">
+      <div class="dc-norm">${d.norm}</div>
+      <div class="dc-name">${d.name}</div>
+    </div>`
+  ).join('');
+}
+
+function selectDevice(id){
+  selectedDevice = DEVICES.find(d=>d.id===id);
+  renderDeviceGrid(document.querySelector('.cat-tab.active').textContent==='Alle' ? 'all' : selectedDevice.cat);
+  const info = document.getElementById('selected-info');
+  info.style.display='block';
+  document.getElementById('sel-norm').textContent = selectedDevice.norm;
+  document.getElementById('sel-title').textContent = selectedDevice.title;
+  // Auto-set flags
+  selectedDevice.flags.forEach(f=>{
+    const t = document.getElementById('t-'+f);
+    if(t){ t.querySelector('input').checked=true; t.classList.add('on'); }
+  });
+}
+
+// Toggle styling
+document.querySelectorAll('.toggle-item input[type=checkbox]').forEach(cb=>{
+  cb.addEventListener('change',function(){
+    this.closest('.toggle-item').classList.toggle('on',this.checked);
+  });
+});
+
+// Radio toggles
+document.querySelectorAll('#radio-toggles input[type=checkbox]').forEach(cb=>{
+  cb.addEventListener('change',function(){
+    this.closest('.toggle-item').classList.toggle('on',this.checked);
+    const hasRadio = Array.from(document.querySelectorAll('#radio-toggles input[type=checkbox]:checked'))
+      .some(c=>c.value!=='none_radio');
+    document.getElementById('red-extra').style.display = hasRadio ? 'block' : 'none';
+    document.getElementById('tab-red').style.display = hasRadio ? 'block' : 'none';
+  });
+});
+
+function switchTab(panelId, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+function resetTool(){
+  selectedDevice=null;
+  document.getElementById('results').style.display='none';
+  document.getElementById('input-section').style.display='block';
+  document.querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=false; cb.closest('.toggle-item')?.classList.remove('on');});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ============================================================
+// CALCULATION
+// ============================================================
+function getFlags(){
+  const f={};
+  document.querySelectorAll('.toggle-item input[type=checkbox]:checked').forEach(cb=>{ f[cb.value]=true; });
+  return f;
+}
+function getRadios(){
+  return Array.from(document.querySelectorAll('#radio-toggles input[type=checkbox]:checked'))
+    .map(cb=>cb.value).filter(v=>v!=='none_radio');
+}
+
+function calculate(){
+  if(!selectedDevice){ alert('Bitte zuerst einen Gerätetyp auswählen!'); return; }
+  const voltage = parseFloat(document.getElementById('voltage').value)||230;
+  const power   = parseFloat(document.getElementById('power').value)||0;
+  const pc      = document.getElementById('prot_class').value;
+  const ip      = document.getElementById('ip').value;
+  const loc     = document.getElementById('location').value;
+  const flags   = getFlags();
+  const radios  = getRadios();
+  const rate    = parseInt(document.getElementById('lab_rate').value)||120;
+  const samples = parseInt(document.getElementById('samples').value)||3;
+
+  // Determine applicable base tests
+  const basePlan = BASE_TESTS.map(t=>{
+    let status = 'yes';
+    if(t.cond==='motor'      && !flags.motor)       status='no';
+    if(t.cond==='transformer'&& !flags.transformer)  status='no';
+    if(t.cond==='fixed_conn' && !flags.fixed_conn)   status='no';
+    if(t.cond==='class_I'    && pc!=='1')            status='no';
+    if(t.cond==='radiation'  && !flags.heating && selectedDevice.id!=='insect_killer') status='no';
+    return {...t, status};
+  });
+
+  // Part 2 tests
+  const part2Plan = (PART2_TESTS[selectedDevice.id]||[]);
+
+  // EMC tests
+  const emcPlan = [...EMC_TESTS];
+
+  // RED tests
+  let redPlan = [];
+  radios.forEach(r=>{ if(RED_TESTS[r]) redPlan.push(...RED_TESTS[r].map(t=>({...t,tech:r}))); });
+
+  // Deduplicate RED safety test
+  const redSafetyAdded = {};
+  redPlan = redPlan.filter(t=>{
+    if(t.name.includes('Sicherheit unter RED')){
+      if(redSafetyAdded[t.norm]) return false;
+      redSafetyAdded[t.norm]=true;
+    }
+    return true;
+  });
+
+  // Hour sums
+  const sum = (arr, filt=()=>true) => arr.filter(filt).reduce((a,t)=>({min:a.min+(t.hmin||0),max:a.max+(t.hmax||0)}),{min:0,max:0});
+  const baseSum   = sum(basePlan, t=>t.status==='yes');
+  const part2Sum  = sum(part2Plan);
+  const emcSum    = sum(emcPlan);
+  const redSum    = sum(redPlan);
+  const total     = {min:baseSum.min+part2Sum.min+emcSum.min+redSum.min,
+                     max:baseSum.max+part2Sum.max+emcSum.max+redSum.max};
+
+  // WARNINGS
+  const warns=[];
+  if(flags.battery) warns.push('Lithium-Akku: Zusätzliche Prüfungen nach IEC 62133 (Sicherheit) und UN 38.3 (Transport) erforderlich – nicht in dieser Kalkulation enthalten.');
+  if(loc==='outdoor'||loc==='both') warns.push('Außenbereich-Verwendung: Erhöhte IP-Anforderungen, Witterungsbeständigkeitstests und ggf. EN 62368-1 / Lärmrichtlinie 2000/14/EG beachten.');
+  if(radios.includes('lte')) warns.push('LTE/5G: Prüfung je Frequenzband – Aufwand stark abhängig von Anzahl der unterstützten Bänder. Kalkulation ist Mindestwert.');
+  if(radios.length>0) warns.push('RED-Richtlinie 2014/53/EU: Die EN 60335-1 Sicherheitsprüfungen werden unter RED durch EN 62368-1 ergänzt/ersetzt, soweit Überschneidungen bestehen.');
+
+  renderResults(basePlan, part2Plan, emcPlan, redPlan, radios, baseSum, part2Sum, emcSum, redSum, total, rate, samples, warns);
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function hCell(min,max){
+  return `<td class="hours-cell">${min}–${max} h<br><span class="hours-range">Ø ${Math.round((min+max)/2)} h</span></td>`;
+}
+
+function testTable(rows, cols3fn){
+  return `<table class="test-table"><thead><tr>
+    <th style="width:70px">Klausel</th><th>Prüfung</th><th style="width:90px">Status</th><th style="width:90px;text-align:right">Aufwand</th>
+  </tr></thead><tbody>${rows.map(cols3fn).join('')}</tbody></table>`;
+}
+
+function renderResults(basePlan,part2Plan,emcPlan,redPlan,radios,baseSum,part2Sum,emcSum,redSum,total,rate,samples,warns){
+  // Summary cards
+  document.getElementById('summary-row').innerHTML=`
+    <div class="sum-card sum-blue"><div class="val">${baseSum.min}–${baseSum.max}</div><div class="lbl">EN 60335-1 (Std.)</div></div>
+    <div class="sum-card sum-green"><div class="val">${part2Sum.min}–${part2Sum.max}</div><div class="lbl">${selectedDevice.norm}</div></div>
+    <div class="sum-card sum-amber"><div class="val">${emcSum.min}–${emcSum.max}</div><div class="lbl">EMV EN 55014</div></div>
+    ${radios.length>0?`<div class="sum-card sum-purple"><div class="val">${redSum.min}–${redSum.max}</div><div class="lbl">RED Funk</div></div>`:''}
+    <div class="sum-card sum-gray"><div class="val">${total.min}–${total.max}</div><div class="lbl">Gesamt Stunden</div></div>
+    <div class="sum-card" style="background:#7f1d1d;color:#fff"><div class="val">${Math.round(total.min*rate/1000)}–${Math.round(total.max*rate/1000)} k€</div><div class="lbl">Kostenrahmen (${rate} €/h)</div></div>
+  `;
+
+  // Warnings
+  const wb=document.getElementById('warnings-box');
+  if(warns.length){
+    wb.style.display='block';
+    wb.innerHTML='<strong>Hinweise:</strong><ul style="margin:6px 0 0 16px">'+warns.map(w=>`<li style="margin-bottom:4px">${w}</li>`).join('')+'</ul>';
+  } else { wb.style.display='none'; }
+
+  // Tab: Overview
+  document.getElementById('t-overview').innerHTML=`
+    <div class="card">
+      <div class="card-title">Anwendbare Normen für: ${selectedDevice.name}</div>
+      <div class="info-note" style="margin-bottom:12px">
+        <strong>Primärnorm:</strong> EN 60335-1:2012+A14:2019 (Basisnorm Sicherheit)<br>
+        <strong>Produktnorm:</strong> ${selectedDevice.norm} – ${selectedDevice.title}<br>
+        <strong>EMV:</strong> EN 55014-1:2017+A11:2020 (Emissionen) + EN 55014-2:2015 (Immunität) + EN 61000-3-2 + EN 61000-3-3
+        ${radios.length>0?`<br><strong>RED 2014/53/EU:</strong> ${radios.map(r=>({wifi24:'EN 300 328 (Wi-Fi 2,4)',wifi5:'EN 301 893 (Wi-Fi 5)',bt:'EN 300 328 (BT)',ble:'EN 300 328 (BLE)',zigbee:'EN 300 328 (Zigbee)',zwave:'EN 300 220 (Z-Wave)',lora:'EN 300 220 (LoRa)',nfc:'EN 300 330 (NFC)',lte:'EN 301 908 (LTE/5G)'})[r]||r).join(', ')}`:''}
+      </div>
+      <div class="section-hdr" style="cursor:default">
+        <h3>Prüfaufwand Zusammenfassung</h3>
+      </div>
+      <table class="test-table">
+        <thead><tr><th>Prüfbereich</th><th>Norm</th><th style="text-align:right">Min (h)</th><th style="text-align:right">Max (h)</th><th style="text-align:right">Ø Kosten (${rate} €/h)</th></tr></thead>
+        <tbody>
+          <tr><td class="test-name">EN 60335-1 Basisnorm</td><td class="clause-num">EN 60335-1:2012+A14:2019</td><td style="text-align:right;font-weight:700">${baseSum.min}</td><td style="text-align:right;font-weight:700">${baseSum.max}</td><td style="text-align:right">${Math.round((baseSum.min+baseSum.max)/2*rate).toLocaleString()} €</td></tr>
+          <tr><td class="test-name">${selectedDevice.norm} (Produktspezifisch)</td><td class="clause-num">${selectedDevice.norm}</td><td style="text-align:right;font-weight:700">${part2Sum.min}</td><td style="text-align:right;font-weight:700">${part2Sum.max}</td><td style="text-align:right">${Math.round((part2Sum.min+part2Sum.max)/2*rate).toLocaleString()} €</td></tr>
+          <tr><td class="test-name">EMV (EN 55014-Reihe)</td><td class="clause-num">EN 55014-1/2, EN 61000-3-2/3</td><td style="text-align:right;font-weight:700">${emcSum.min}</td><td style="text-align:right;font-weight:700">${emcSum.max}</td><td style="text-align:right">${Math.round((emcSum.min+emcSum.max)/2*rate).toLocaleString()} €</td></tr>
+          ${radios.length>0?`<tr><td class="test-name">RED 2014/53/EU (Funk)</td><td class="clause-num">EN 300 328 / 301 893 / …</td><td style="text-align:right;font-weight:700">${redSum.min}</td><td style="text-align:right;font-weight:700">${redSum.max}</td><td style="text-align:right">${Math.round((redSum.min+redSum.max)/2*rate).toLocaleString()} €</td></tr>`:''}
+          <tr style="background:var(--gray-50)"><td class="test-name" style="font-weight:700">GESAMT</td><td></td><td style="text-align:right;font-weight:800;font-size:15px;color:var(--blue)">${total.min}</td><td style="text-align:right;font-weight:800;font-size:15px;color:var(--blue)">${total.max}</td><td style="text-align:right;font-weight:700">${Math.round((total.min+total.max)/2*rate).toLocaleString()} €</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Tab: EN 60335-1
+  document.getElementById('t-basis').innerHTML=`<div class="card">
+    <div class="card-title">EN 60335-1:2012+A14:2019 – Klauselweise Prüfplanung</div>
+    <div class="info-note">Bedingte Prüfungen (gelb hinterlegt) sind abhängig von Geräteeigenschaften. N/A = nicht zutreffend für dieses Gerät.</div>
+    ${testTable(basePlan, t=>`<tr class="${t.status==='no'?'na':t.cond?'conditional':''}">
+      <td class="clause-num">Kl. ${t.cl}</td>
+      <td><div class="test-name">${t.name}</div><div class="test-desc">${t.desc}</div></td>
+      <td><span class="badge badge-${t.status==='yes'?'yes':t.status==='no'?'no':'cond'}">${t.status==='yes'?'Pflicht':t.status==='no'?'N/A':'Bedingt'}</span></td>
+      ${t.status==='no'?'<td class="hours-cell" style="color:var(--gray-400)">–</td>':hCell(t.hmin,t.hmax)}
+    </tr>`)}
+    <div style="text-align:right;padding:12px 0;font-size:13px;color:var(--gray-600)">
+      Summe anwendbare Klauseln: <strong>${baseSum.min}–${baseSum.max} h</strong>
+    </div>
+  </div>`;
+
+  // Tab: Part 2
+  document.getElementById('tab-part2').textContent = selectedDevice.norm.replace('EN ','');
+  if(part2Plan.length===0){
+    document.getElementById('t-part2').innerHTML=`<div class="card"><div class="info-note">Keine spezifischen Zusatzprüfungen hinterlegt – bitte produktspezifische Norm konsultieren.</div></div>`;
+  } else {
+    document.getElementById('t-part2').innerHTML=`<div class="card">
+      <div class="card-title">${selectedDevice.norm} – Produktspezifische Zusatzprüfungen</div>
+      <div class="info-note">Diese Prüfungen ergänzen oder modifizieren EN 60335-1. Sie sind in den Basisnorm-Stunden nicht enthalten.</div>
+      <table class="test-table"><thead><tr><th>Prüfung</th><th>Beschreibung</th><th style="text-align:right">Aufwand</th></tr></thead><tbody>
+        ${part2Plan.map(t=>`<tr>
+          <td><div class="test-name">${t.name}</div></td>
+          <td><div class="test-desc" style="font-size:12px">${t.desc}</div></td>
+          ${hCell(t.hmin,t.hmax)}
+        </tr>`).join('')}
+        <tr style="background:var(--gray-50)"><td colspan="2" style="text-align:right;font-weight:700;font-size:13px;padding:10px">Summe produktspezifische Prüfungen:</td><td class="hours-cell"><strong>${part2Sum.min}–${part2Sum.max} h</strong></td></tr>
+      </tbody></table>
+    </div>`;
+  }
+
+  // Tab: EMC
+  document.getElementById('t-emc').innerHTML=`<div class="card">
+    <div class="card-title">EMV-Prüfungen nach EN 55014-1/2 und EN 61000-3-x</div>
+    <div class="info-note">Für Haushaltsgeräte gelten EN 55014-1 (Emissionen) und EN 55014-2 (Immunität) gemäß EMV-Richtlinie 2014/30/EU. Bei Funkanlagen (RED) werden diese durch EN 301 489-x ersetzt/ergänzt.</div>
+    <table class="test-table"><thead><tr><th>Prüfung</th><th>Beschreibung</th><th style="text-align:right">Aufwand</th></tr></thead><tbody>
+      ${emcPlan.map(t=>`<tr>
+        <td colspan="1"><div class="test-name">${t.name}</div></td>
+        <td><div class="test-desc">${t.desc}</div></td>
+        ${hCell(t.hmin,t.hmax)}
+      </tr>`).join('')}
+      <tr style="background:var(--gray-50)"><td colspan="2" style="text-align:right;font-weight:700;font-size:13px;padding:10px">Summe EMV:</td><td class="hours-cell"><strong>${emcSum.min}–${emcSum.max} h</strong></td></tr>
+    </tbody></table>
+  </div>`;
+
+  // Tab: RED
+  if(radios.length>0){
+    const techNames = {wifi24:'Wi-Fi 2,4 GHz',wifi5:'Wi-Fi 5 GHz',bt:'Bluetooth Classic',ble:'Bluetooth LE',zigbee:'Zigbee/Thread/Matter',zwave:'Z-Wave 868 MHz',lora:'LoRa 868 MHz',nfc:'NFC 13,56 MHz',lte:'LTE/5G'};
+    let redHtml = `<div class="info-note">RED-Richtlinie 2014/53/EU – Konformitätsbewertung erforderlich für Artikel 3.1(a) Sicherheit, Art. 3.1(b) EMV und Art. 3.2 Funkspektrum.</div>`;
+    radios.forEach(r=>{
+      const tests = RED_TESTS[r]||[];
+      const s = tests.reduce((a,t)=>({min:a.min+t.hmin,max:a.max+t.hmax}),{min:0,max:0});
+      redHtml += `<div class="section-hdr" style="cursor:default;margin-top:12px"><h3>${techNames[r]||r}</h3><span class="shours">${s.min}–${s.max} h</span></div>
+        <table class="test-table"><thead><tr><th style="width:120px">Norm</th><th>Prüfung</th><th>Beschreibung</th><th style="text-align:right">Aufwand</th></tr></thead><tbody>
+        ${tests.map(t=>`<tr>
+          <td><span class="clause-num" style="font-size:10px">${t.norm}</span></td>
+          <td><div class="test-name">${t.name}</div></td>
+          <td><div class="test-desc">${t.desc}</div></td>
+          ${hCell(t.hmin,t.hmax)}
+        </tr>`).join('')}
+        </tbody></table>`;
+    });
+    redHtml += `<div style="text-align:right;padding:12px 0;font-size:13px;color:var(--gray-600)">Gesamtaufwand RED: <strong>${redSum.min}–${redSum.max} h</strong></div>`;
+    document.getElementById('t-red').innerHTML=`<div class="card">${redHtml}</div>`;
+    document.getElementById('tab-red').style.display='block';
+  } else {
+    document.getElementById('tab-red').style.display='none';
+  }
+
+  // Tab: Kalkulation
+  const rateMin = total.min*rate;
+  const rateMax = total.max*rate;
+  const rateAvg = Math.round((rateMin+rateMax)/2);
+  document.getElementById('t-cost').innerHTML=`<div class="card">
+    <div class="card-title">Prüfkostenkalkulation</div>
+    <div class="cost-grid">
+      <div>
+        <div class="field" style="margin-bottom:16px">
+          <label>Laborstundensatz anpassen: <strong>${rate} €/h</strong></label>
+          <input type="range" class="rate-slider" min="80" max="250" step="5" value="${rate}"
+            oninput="recalcCost(this.value,${total.min},${total.max})">
+        </div>
+        <div id="cost-table">
+          ${costTable(rate,total,baseSum,part2Sum,emcSum,redSum,radios)}
+        </div>
+      </div>
+      <div>
+        <div class="section-hdr" style="cursor:default"><h3>Kalkulations-Hinweise</h3></div>
+        <div style="font-size:12px;color:var(--gray-600);line-height:1.7;margin-top:10px">
+          <p>• Stundenwerte sind <strong>reine Prüfstunden</strong> im akkreditierten Labor</p>
+          <p style="margin-top:6px">• <strong>Nicht enthalten:</strong> Anreise, Probenlogistik, Vorbesprechung, Berichterstattung (ca. +20–30 %)</p>
+          <p style="margin-top:6px">• Berichterstattung und Dokumentation: ca. <strong>+15–25 %</strong> Aufschlag</p>
+          <p style="margin-top:6px">• Anzahl Baumuster: <strong>${samples} Stück</strong> (nur Materialkosten; Prüfaufwand einmalig)</p>
+          <p style="margin-top:6px">• Bei Optimierung durch vorab erstellte techn. Unterlagen: Einsparung ca. 10–15 %</p>
+          <p style="margin-top:6px">• Externe Konformitätserklärung (DoC): durch Hersteller, kein Notified Body bei Klasse I-Geräten</p>
+          <p style="margin-top:12px;padding:8px;background:var(--blue-l);border-radius:6px;color:var(--blue-d)"><strong>Gesamtrahmen inkl. Bericht (+25%):</strong><br>
+            ${Math.round(rateMin*1.25).toLocaleString()} – ${Math.round(rateMax*1.25).toLocaleString()} €
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('input-section').style.display='none';
+  document.getElementById('results').style.display='block';
+  // Reset to overview tab
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tab').classList.add('active');
+  document.getElementById('t-overview').classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function costTable(rate,total,baseSum,part2Sum,emcSum,redSum,radios){
+  const fmt = n=>Math.round(n).toLocaleString()+' €';
+  const rows=[
+    ['EN 60335-1 Basisnorm',`${baseSum.min}–${baseSum.max} h`,fmt(baseSum.min*rate),fmt(baseSum.max*rate)],
+    [`${selectedDevice.norm} (Produktspez.)`,`${part2Sum.min}–${part2Sum.max} h`,fmt(part2Sum.min*rate),fmt(part2Sum.max*rate)],
+    ['EMV EN 55014-Reihe',`${emcSum.min}–${emcSum.max} h`,fmt(emcSum.min*rate),fmt(emcSum.max*rate)],
+    ...(radios.length>0?[['RED 2014/53/EU (Funk)',`${redSum.min}–${redSum.max} h`,fmt(redSum.min*rate),fmt(redSum.max*rate)]]:[]),
+  ];
+  return `<table class="test-table"><thead><tr><th>Bereich</th><th>Stunden</th><th>Min (€)</th><th>Max (€)</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr>${r.map((c,i)=>`<td ${i>0?'style="text-align:right"':''}>${c}</td>`).join('')}</tr>`).join('')}
+    <tr style="background:var(--gray-50)"><td style="font-weight:700">Gesamt</td><td style="text-align:right;font-weight:700">${total.min}–${total.max} h</td>
+      <td style="text-align:right;font-weight:700;color:var(--blue)">${fmt(total.min*rate)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--blue)">${fmt(total.max*rate)}</td></tr>
+  </tbody></table>`;
+}
+
+function recalcCost(newRate,tmin,tmax){
+  const total={min:tmin,max:tmax};
+  // Approximate split (60/20/20 fallback)
+  const baseSum={min:Math.round(tmin*0.55),max:Math.round(tmax*0.55)};
+  const part2Sum={min:Math.round(tmin*0.2),max:Math.round(tmax*0.2)};
+  const emcSum={min:Math.round(tmin*0.15),max:Math.round(tmax*0.15)};
+  const redSum={min:tmin-baseSum.min-part2Sum.min-emcSum.min,max:tmax-baseSum.max-part2Sum.max-emcSum.max};
+  document.getElementById('cost-table').innerHTML=costTable(parseInt(newRate),total,baseSum,part2Sum,emcSum,redSum,[]);
+}
+
+// Init
+initDeviceGrid();
+</script>
+</body>
+</html>
