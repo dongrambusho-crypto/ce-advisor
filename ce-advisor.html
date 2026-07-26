@@ -1247,6 +1247,8 @@ const PQ_STANDARDS = {
         {id:'netstandby', name:'Network Standby', hours:{mg6:1,mg10:1,mg15:1,mg16:1}, def:true},
         {id:'inforeq', name:'Informationsanforderungen VO (EU) 2019/2022 Anh. II Nr. 6', hours:{mg6:2,mg10:2,mg15:2,mg16:2}, def:true},
         {id:'datasheet', name:'Prüfung Datenblatt VO (EU) 2019/2017 Anh. V (Vollständigkeit)', hours:{mg6:1,mg10:1,mg15:1,mg16:1}, def:true},
+        {id:'noise_din', name:'Geräuschprüfung in Anlehnung an DIN EN 60704-2-3:2020 und DIN EN 60704-1:2029', priceFixed:1350, def:false},
+        {id:'hygiene_din', name:'Hygieneprüfung nach DIN EN 17735:2023-02', priceFixed:7222, def:false},
       ],
       fullTest:{mg6:30,mg10:39.5,mg15:44.5,mg16:45.5},
       fullTestLabel:'Referenz-Listenpreis „full test“ (Gesamtpaket) lt. Preisliste'
@@ -1260,6 +1262,8 @@ const PQ_STANDARDS = {
         {id:'catD', name:'Kategorie D – Sicherheitsprüfung (mechanisch, elektrisch, Wasserschaden)', hours:{mg6:12,mg10:12,mg15:12,mg16:12}, def:true},
         {id:'catE', name:'Kategorie E – Funktionsprüfung (Eco-/Kurz-/Automatikprogramm, jeweils CCD)', hours:{mg6:63,mg10:86,mg15:98,mg16:105}, def:true},
         {id:'catF', name:'Kategorie F – Handhabung (Paneltest mit 5 Personen, Bedienungsanleitung)', hours:{mg6:11,mg10:11,mg15:11,mg16:11}, def:true},
+        {id:'noise_din', name:'Geräuschprüfung in Anlehnung an DIN EN 60704-2-3:2020 und DIN EN 60704-1:2029', priceFixed:1350, def:false},
+        {id:'hygiene_din', name:'Hygieneprüfung nach DIN EN 17735:2023-02', priceFixed:7222, def:false},
       ],
       fullTest:{mg6:94.5,mg10:117.5,mg15:129.5,mg16:136.5},
       fullTestLabel:'entspricht Listenpreis „full test“ (Summe Kategorien B–F)'
@@ -1269,6 +1273,8 @@ const PQ_STANDARDS = {
       legal:'Entwurfsstand 05.06.2026 – Änderungen ggü. 2024: neue Referenzmaschine, LPM (2 Modi: Off/Standby), neue Reparierbarkeitsprüfung, aktualisierte Geräusch-/Sicherheitsnormen. Kategorienaufteilung wird zur Veröffentlichung final festgelegt, daher als Gesamtpaket kalkuliert.',
       items:[
         {id:'full', name:'Vollprüfung StiWa (Entwurf VÖ 2027) – Gesamtpaket', hours:{mg6:121.5,mg10:145.5,mg15:157.5,mg16:164.5}, def:true},
+        {id:'noise_din', name:'Geräuschprüfung in Anlehnung an DIN EN 60704-2-3:2020 und DIN EN 60704-1:2029', priceFixed:1350, def:false},
+        {id:'hygiene_din', name:'Hygieneprüfung nach DIN EN 17735:2023-02', priceFixed:7222, def:false},
       ]
     }
   ],
@@ -1439,6 +1445,7 @@ function pqCtx(){
 }
 
 function pqItemHours(item, ctx){
+  if(item.priceFixed!=null) return 0;
   let h=0;
   if(item.hoursFixed!=null) h = item.hoursFixed;
   else if(item.hours){
@@ -1455,10 +1462,12 @@ function renderPQItems(){
   const ctx = pqCtx();
   const el = document.getElementById('pq-items');
   el.innerHTML = pqStandardObj.items.map(it=>{
-    const h = pqItemHours(it, ctx);
+    const label = it.priceFixed!=null
+      ? `${it.priceFixed.toLocaleString('de-DE')} € (Festpreis)`
+      : `${pqItemHours(it, ctx).toLocaleString('de-DE')} h`;
     return `<label class="toggle-item ${it.def?'on':''}" style="min-width:280px">
       <input type="checkbox" data-pq-item="${it.id}" ${it.def?'checked':''} onchange="this.closest('.toggle-item').classList.toggle('on',this.checked)">
-      ${it.name} <span class="item-hours">${h.toLocaleString('de-DE')} h</span>
+      ${it.name} <span class="item-hours">${label}</span>
     </label>`;
   }).join('');
 }
@@ -1469,9 +1478,14 @@ function calculatePQ(){
   const rate = parseFloat(document.getElementById('pq_lab_rate').value)||168;
   const samples = parseInt(document.getElementById('pq_samples').value)||1;
   const checked = Array.from(document.querySelectorAll('#pq-items input[data-pq-item]:checked')).map(cb=>cb.dataset.pqItem);
-  const rows = pqStandardObj.items.filter(it=>checked.includes(it.id)).map(it=>({name:it.name, hours:pqItemHours(it,ctx)}));
+  const rows = pqStandardObj.items.filter(it=>checked.includes(it.id)).map(it=>({
+    name:it.name,
+    hours:pqItemHours(it,ctx),
+    priceFixed: it.priceFixed!=null ? it.priceFixed : null,
+    cost: it.priceFixed!=null ? it.priceFixed*samples : pqItemHours(it,ctx)*rate*samples
+  }));
   const totalHours = rows.reduce((s,r)=>s+r.hours,0);
-  const totalCost = totalHours*rate*samples;
+  const totalCost = rows.reduce((s,r)=>s+r.cost,0);
 
   document.getElementById('pq-summary-row').innerHTML = `
     <div class="sum-card sum-purple"><div class="val">${totalHours.toLocaleString('de-DE')} h</div><div class="lbl">Gesamtaufwand</div></div>
@@ -1483,7 +1497,7 @@ function calculatePQ(){
   const fmt = n=>Math.round(n).toLocaleString('de-DE')+' €';
   document.getElementById('pq-table-wrap').innerHTML = `<div class="card">
     <table class="test-table"><thead><tr><th>Prüfposition</th><th style="text-align:right">Stunden</th><th style="text-align:right">Kosten (${samples}x)</th></tr></thead><tbody>
-      ${rows.map(r=>`<tr><td class="test-name">${r.name}</td><td class="hours-cell">${r.hours.toLocaleString('de-DE')} h</td><td class="hours-cell">${fmt(r.hours*rate*samples)}</td></tr>`).join('')}
+      ${rows.map(r=>`<tr><td class="test-name">${r.name}</td><td class="hours-cell">${r.priceFixed!=null?'Festpreis':r.hours.toLocaleString('de-DE')+' h'}</td><td class="hours-cell">${fmt(r.cost)}</td></tr>`).join('')}
       <tr style="background:var(--gray-50)"><td style="font-weight:700">Gesamt</td><td class="hours-cell" style="color:var(--blue)">${totalHours.toLocaleString('de-DE')} h</td><td class="hours-cell" style="color:var(--blue)">${fmt(totalCost)}</td></tr>
     </tbody></table>
   </div>`;
