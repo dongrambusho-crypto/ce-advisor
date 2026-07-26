@@ -975,12 +975,25 @@ function calculate(){
     return true;
   });
 
-  // Hour sums
+  // Aufwandsreduktion CE-Sicherheit: alle Prüfstunden um 20 % reduziert
+  const CE_REDUCTION = 0.8;
+  const round05 = n => Math.round(n*2)/2;
+  const reduceHours = arr => arr.map(t => ({
+    ...t,
+    hmin: t.hmin!=null ? round05(t.hmin*CE_REDUCTION) : t.hmin,
+    hmax: t.hmax!=null ? round05(t.hmax*CE_REDUCTION) : t.hmax,
+  }));
+  const basePlanR  = reduceHours(basePlan);
+  const part2PlanR = reduceHours(part2Plan);
+  const emcPlanR   = reduceHours(emcPlan);
+  const redPlanR   = reduceHours(redPlan);
+
+  // Hour sums (auf Basis der um 20 % reduzierten Prüfstunden)
   const sum = (arr, filt=()=>true) => arr.filter(filt).reduce((a,t)=>({min:a.min+(t.hmin||0),max:a.max+(t.hmax||0)}),{min:0,max:0});
-  const baseSum   = sum(basePlan, t=>t.status==='yes');
-  const part2Sum  = sum(part2Plan);
-  const emcSum    = sum(emcPlan);
-  const redSum    = sum(redPlan);
+  const baseSum   = sum(basePlanR, t=>t.status==='yes');
+  const part2Sum  = sum(part2PlanR);
+  const emcSum    = sum(emcPlanR);
+  const redSum    = sum(redPlanR);
   const total     = {min:baseSum.min+part2Sum.min+emcSum.min+redSum.min,
                      max:baseSum.max+part2Sum.max+emcSum.max+redSum.max};
 
@@ -991,7 +1004,7 @@ function calculate(){
   if(radios.includes('lte')) warns.push('LTE/5G: Prüfung je Frequenzband – Aufwand stark abhängig von Anzahl der unterstützten Bänder. Kalkulation ist Mindestwert.');
   if(radios.length>0) warns.push('RED-Richtlinie 2014/53/EU: Die EN 60335-1 Sicherheitsprüfungen werden unter RED durch EN 62368-1 ergänzt/ersetzt, soweit Überschneidungen bestehen.');
 
-  renderResults(basePlan, part2Plan, emcPlan, redPlan, radios, baseSum, part2Sum, emcSum, redSum, total, rate, samples, warns);
+  renderResults(basePlanR, part2PlanR, emcPlanR, redPlanR, radios, baseSum, part2Sum, emcSum, redSum, total, rate, samples, warns);
 }
 
 // ============================================================
