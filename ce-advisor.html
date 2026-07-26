@@ -105,6 +105,24 @@ select:focus,input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 .rate-slider{width:100%;margin-top:4px;accent-color:var(--blue)}
 .info-note{background:var(--blue-l);border:1px solid #93c5fd;border-radius:var(--r);padding:12px 14px;font-size:12px;color:#1e40af;margin-bottom:16px}
 .warn-note{background:var(--amber-l);border:1px solid var(--amber-b);border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--amber);margin-bottom:12px}
+/* MODE SELECT */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.mode-grid{grid-template-columns:1fr}}
+.mode-card{border:2px solid var(--border);border-radius:12px;padding:22px;cursor:pointer;transition:all .15s;background:#fff}
+.mode-card:hover{border-color:var(--blue);box-shadow:0 6px 16px rgba(26,86,219,.15);transform:translateY(-2px)}
+.mode-card .mode-icon{font-size:30px;margin-bottom:8px}
+.mode-card .mode-title{font-size:16px;font-weight:800;color:var(--blue-d);margin-bottom:6px}
+.mode-card .mode-desc{font-size:12.5px;color:var(--gray-600);line-height:1.5}
+.mode-card.pq:hover{border-color:#7c3aed;box-shadow:0 6px 16px rgba(124,58,237,.15)}
+.mode-card.pq .mode-title{color:#5521b5}
+#input-section{display:none}
+#pq-section{display:none}
+#pq-results{display:none}
+.pq-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;background:var(--purple-l);color:var(--purple);margin-left:6px;vertical-align:middle}
+.pq-badge.old{background:var(--gray-100);color:var(--gray-600)}
+.pq-badge.draft{background:var(--amber-l);color:var(--amber)}
+.pq-legal{font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:4px}
+.item-hours{font-weight:700;color:var(--blue);float:right}
 /* PRINT */
 @media print{
   header,#input-section,.btn-reset,.tabs{display:block!important}
@@ -125,6 +143,23 @@ select:focus,input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 </header>
 
 <div class="wrap">
+
+<!-- ===== MODE SELECT (Startseite) ===== -->
+<div class="card" id="mode-select-card">
+  <div class="card-title">Bereich wählen</div>
+  <div class="mode-grid">
+    <div class="mode-card" onclick="selectMode('ce')">
+      <div class="mode-icon">&#9878;&#65039;</div>
+      <div class="mode-title">CE-Sicherheit</div>
+      <div class="mode-desc">Prüfplanung und Aufwandskalkulation nach EN 60335-1 / EN 60335-2-x, EMV (EN 55014) &amp; RED-Richtlinie 2014/53/EU für die CE-Kennzeichnung von Haushaltsgeräten.</div>
+    </div>
+    <div class="mode-card pq" onclick="selectMode('pq')">
+      <div class="mode-icon">&#11088;</div>
+      <div class="mode-title">Performance / Quality</div>
+      <div class="mode-desc">Leistungs-, Label- und Qualitätsprüfungen: Geschirrspüler (EN IEC 60436, StiWa), Waschmaschinen (EN 60456, IEC 60456:2024), Wäschetrockner (EN 61121) &amp; Waschtrockner (EN IEC 62512).</div>
+    </div>
+  </div>
+</div>
 
 <!-- ===== INPUT ===== -->
 <div id="input-section">
@@ -292,6 +327,59 @@ select:focus,input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
   <div class="tab-panel" id="t-emc"></div>
   <div class="tab-panel" id="t-red"></div>
   <div class="tab-panel" id="t-cost"></div>
+</div>
+
+<!-- ===== PERFORMANCE/QUALITY FLOW ===== -->
+<div id="pq-section">
+  <button class="btn-reset" onclick="backToStart()">&#8592; Zurück zur Startseite</button>
+
+  <div class="card">
+    <div class="card-title"><span class="step-circle">1</span> Gerätetyp wählen</div>
+    <div class="device-grid" id="pq-device-grid"></div>
+  </div>
+
+  <div class="card" id="pq-standard-card" style="display:none">
+    <div class="card-title"><span class="step-circle">2</span> Prüfnorm wählen</div>
+    <div class="device-grid" id="pq-standard-grid"></div>
+    <div class="pq-legal" id="pq-standard-legal" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card" id="pq-params-card" style="display:none">
+    <div class="card-title"><span class="step-circle">3</span> Kapazität / Prüfparameter</div>
+    <div class="grid3" id="pq-params"></div>
+    <div class="warn-note" id="pq-note" style="display:none;margin-top:12px"></div>
+  </div>
+
+  <div class="card" id="pq-items-card" style="display:none">
+    <div class="card-title"><span class="step-circle">4</span> Prüfumfang (Mehrfachauswahl)</div>
+    <div class="toggle-row" id="pq-items"></div>
+  </div>
+
+  <div class="card" id="pq-rate-card" style="display:none">
+    <div class="card-title"><span class="step-circle">5</span> Kalkulationsparameter</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Laborstundensatz (€/h): <strong id="pq-rate-display">168</strong> €/h</label>
+        <input type="range" class="rate-slider" id="pq_lab_rate" min="80" max="250" step="1" value="168" oninput="document.getElementById('pq-rate-display').textContent=this.value">
+        <span class="hint">Referenz: Stundensatz „Quality“ inkl. Marge 168,20 €/h (Stand 2026)</span>
+      </div>
+      <div class="field">
+        <label>Anzahl Baumuster (Samples)</label>
+        <input type="number" id="pq_samples" value="1" min="1" max="20">
+        <span class="hint">Prüfaufwand bleibt gleich; Stückkosten variieren</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-calc" id="pq-calc-btn" style="display:none" onclick="calculatePQ()">&#x1F4CA; Aufwand &amp; Kalkulation berechnen</button>
+</div>
+
+<!-- ===== PQ RESULTS ===== -->
+<div id="pq-results">
+  <button class="btn-reset" onclick="resetPQ()">&#8592; Neue Kalkulation</button>
+  <div class="summary-row" id="pq-summary-row"></div>
+  <div class="info-note" id="pq-fulltest-note" style="display:none"></div>
+  <div id="pq-table-wrap"></div>
 </div>
 
 </div><!-- /wrap -->
@@ -798,8 +886,36 @@ function switchTab(panelId, el){
 function resetTool(){
   selectedDevice=null;
   document.getElementById('results').style.display='none';
-  document.getElementById('input-section').style.display='block';
-  document.querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=false; cb.closest('.toggle-item')?.classList.remove('on');});
+  document.getElementById('input-section').style.display='none';
+  document.getElementById('mode-select-card').style.display='block';
+  document.querySelectorAll('#input-section input[type=checkbox]').forEach(cb=>{cb.checked=false; cb.closest('.toggle-item')?.classList.remove('on');});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ============================================================
+// MODE SELECT (Startseite)
+// ============================================================
+function selectMode(mode){
+  document.getElementById('mode-select-card').style.display='none';
+  document.getElementById('results').style.display='none';
+  document.getElementById('pq-results').style.display='none';
+  if(mode==='ce'){
+    document.getElementById('input-section').style.display='block';
+    document.getElementById('pq-section').style.display='none';
+  } else {
+    document.getElementById('pq-section').style.display='block';
+    document.getElementById('input-section').style.display='none';
+    initPQDeviceGrid();
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function backToStart(){
+  document.getElementById('pq-section').style.display='none';
+  document.getElementById('input-section').style.display='none';
+  document.getElementById('results').style.display='none';
+  document.getElementById('pq-results').style.display='none';
+  document.getElementById('mode-select-card').style.display='block';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1075,6 +1191,313 @@ function recalcCost(newRate,tmin,tmax){
   const emcSum={min:Math.round(tmin*0.15),max:Math.round(tmax*0.15)};
   const redSum={min:tmin-baseSum.min-part2Sum.min-emcSum.min,max:tmax-baseSum.max-part2Sum.max-emcSum.max};
   document.getElementById('cost-table').innerHTML=costTable(parseInt(newRate),total,baseSum,part2Sum,emcSum,redSum,[]);
+}
+
+// ============================================================
+// PERFORMANCE / QUALITY MODULE
+// Datenquelle: interne Aufwandslisten Geschirrspüler (Stand 01.04.2026),
+// Wäschepflege-Labelprüfungen (Stand 2025) und IEC 60456:2024 Ed.6 (Stand 2025)
+// ============================================================
+const KG_ALL = [
+  {id:'k64',  label:'bis 6,4 kg Kapazität'},
+  {id:'k74',  label:'6,5 – 7,4 kg Kapazität'},
+  {id:'k84',  label:'7,5 – 8,4 kg Kapazität'},
+  {id:'k94',  label:'8,5 – 9,4 kg Kapazität'},
+  {id:'k104', label:'9,5 – 10,4 kg Kapazität'},
+  {id:'k114', label:'10,5 – 11,4 kg Kapazität'},
+  {id:'k124', label:'11,5 – 12,4 kg Kapazität'}
+];
+const MG_ALL = [
+  {id:'mg6',  label:'bis 6 Maßgedecke (MG)'},
+  {id:'mg10', label:'bis 10 MG'},
+  {id:'mg15', label:'bis 15 MG'},
+  {id:'mg16', label:'16 MG'}
+];
+
+const PQ_APPLIANCES = [
+  {id:'dishwasher',  name:'Geschirrspülmaschine', norm:'GSM', title:'Energy-Label- &amp; StiWa-Prüfungen'},
+  {id:'washer',      name:'Waschmaschine',        norm:'WM',  title:'Label- &amp; Funktionsprüfungen'},
+  {id:'dryer',       name:'Wäschetrockner',       norm:'WT',  title:'Label-Prüfung EN 61121'},
+  {id:'washerdryer', name:'Waschtrockner',        norm:'WD',  title:'Label-Prüfung EN IEC 62512'}
+];
+
+const PQ_STANDARDS = {
+  dishwasher: [
+    {
+      id:'en60436', label:'EN IEC 60436:2025', title:'Energy-Label-Prüfung (Reiniger E)', tierType:'select', tiers:MG_ALL,
+      legal:'VO (EU) 2019/2017 Anh. II (EE-Klassen), IV (Methoden), VI (techn. Dokumentation) &amp; VO (EU) 2019/2022 Anh. II (Ökodesign) · entspricht 2PfG 3109:2026-03 / Reiniger E · Stand Preisliste: 01.04.2026',
+      items:[
+        {id:'ccd', name:'CCD – gemeinsame Reinigung + Trocknung (5 Versuche), inkl. Berichterstellung', hours:{mg6:26.5,mg10:36,mg15:41,mg16:42}, def:true},
+        {id:'lowenergy', name:'Niedrigenergie-Verbrauch (Standby, Delay-Start, Left-on, Off-mode)', hours:{mg6:2.5,mg10:2.5,mg15:2.5,mg16:2.5}, def:true},
+        {id:'netstandby', name:'Network Standby', hours:{mg6:1,mg10:1,mg15:1,mg16:1}, def:true},
+        {id:'inforeq', name:'Informationsanforderungen VO (EU) 2019/2022 Anh. II Nr. 6', hours:{mg6:2,mg10:2,mg15:2,mg16:2}, def:true},
+        {id:'datasheet', name:'Prüfung Datenblatt VO (EU) 2019/2017 Anh. V (Vollständigkeit)', hours:{mg6:1,mg10:1,mg15:1,mg16:1}, def:true},
+      ],
+      fullTest:{mg6:30,mg10:39.5,mg15:44.5,mg16:45.5},
+      fullTestLabel:'Referenz-Listenpreis „full test“ (Gesamtpaket) lt. Preisliste'
+    },
+    {
+      id:'stiwa2024', label:'StiWa 320000031250', title:'Vollprüfung, Stand 2024 (aktuell)', tierType:'select', tiers:MG_ALL,
+      legal:'entspricht 2 PfG-Q 2580:2021-04 · Prüfzeitraum ca. 3 Monate · Stand Preisliste: 18.06.2025',
+      items:[
+        {id:'catB', name:'Kategorie B – Umwelteigenschaften (Wasser-/Energieverbrauch, Geruch, Niedrigenergie)', hours:{mg6:2.5,mg10:2.5,mg15:2.5,mg16:2.5}, def:true},
+        {id:'catC', name:'Kategorie C – Technische Prüfung (Programmdauern, Verarbeitungsqualität, Standsicherheit, Feuchteableitung)', hours:{mg6:6,mg10:6,mg15:6,mg16:6}, def:true},
+        {id:'catD', name:'Kategorie D – Sicherheitsprüfung (mechanisch, elektrisch, Wasserschaden)', hours:{mg6:12,mg10:12,mg15:12,mg16:12}, def:true},
+        {id:'catE', name:'Kategorie E – Funktionsprüfung (Eco-/Kurz-/Automatikprogramm, jeweils CCD)', hours:{mg6:63,mg10:86,mg15:98,mg16:105}, def:true},
+        {id:'catF', name:'Kategorie F – Handhabung (Paneltest mit 5 Personen, Bedienungsanleitung)', hours:{mg6:11,mg10:11,mg15:11,mg16:11}, def:true},
+      ],
+      fullTest:{mg6:94.5,mg10:117.5,mg15:129.5,mg16:136.5},
+      fullTestLabel:'entspricht Listenpreis „full test“ (Summe Kategorien B–F)'
+    },
+    {
+      id:'stiwa2027', label:'StiWa 320000043240', title:'Vollprüfung, Entwurf ab VÖ 2027', tierType:'select', tiers:MG_ALL, badge:'Entwurf',
+      legal:'Entwurfsstand 05.06.2026 – Änderungen ggü. 2024: neue Referenzmaschine, LPM (2 Modi: Off/Standby), neue Reparierbarkeitsprüfung, aktualisierte Geräusch-/Sicherheitsnormen. Kategorienaufteilung wird zur Veröffentlichung final festgelegt, daher als Gesamtpaket kalkuliert.',
+      items:[
+        {id:'full', name:'Vollprüfung StiWa (Entwurf VÖ 2027) – Gesamtpaket', hours:{mg6:121.5,mg10:145.5,mg15:157.5,mg16:164.5}, def:true},
+      ]
+    }
+  ],
+  washer: [
+    {
+      id:'en60456_2023', label:'EN 60456:2016/A12:2023', title:'Label-Prüfung – aktuell (EU-Markt)', tierType:'select', tiers:KG_ALL,
+      legal:'VO (EU) 2019/2023 Anh. II Nr. 3–6 + VO (EU) 2019/2014 Anh. II · Prüfzeit je Gerät: 2–3 Wochen + Vorlaufzeit',
+      items:[
+        {id:'base', name:'Label-Verifikation nach Kapazität', hours:{k64:34.5,k74:36,k84:37.5,k94:39,k104:40.5,k114:42,k124:43.5}, def:true},
+        {id:'lpm', name:'Low Power Modes – Messung Standby-Verbrauch', hoursFixed:4, def:true},
+        {id:'doku', name:'Zusatzaufwand Überprüfung Dokumentationsanforderungen', hoursFixed:1, def:false},
+      ]
+    },
+    {
+      id:'en60456_2016', label:'EN 60456:2016', title:'Label-Prüfung – SANS / SASO / Drittmärkte', tierType:'select', tiers:KG_ALL,
+      legal:'VO (EU) 1015/2010 Anh. III + VO (EU) 1061/2010 Anh. VI · für SANS/SASO- u.ä. Zertifizierung · Prüfzeit je Gerät: 2–3 Wochen + Vorlaufzeit',
+      items:[
+        {id:'base', name:'Label-Verifikation nach Kapazität', hours:{k64:30,k74:31,k84:32,k94:33,k104:34,k114:35,k124:36}, def:true},
+        {id:'lpm', name:'Low Power Modes (Left-on/Off-mode enthalten; Networked-Standby + Start-Delay)', hoursFixed:2, def:true},
+        {id:'sans', name:'SANS-Zusatzaufwand (Rubbeltest + Labelmaße 3h, Standby 5h, Bericht 1h)', hoursFixed:9, def:false},
+        {id:'saso', name:'SASO-Zusatzaufwand (Bericht 1h, Prüfung Kennzeichnung/Anleitung 1h)', hoursFixed:2, def:false},
+        {id:'doku', name:'Zusatzaufwand Überprüfung Dokumentationsanforderungen', hoursFixed:1, def:false},
+      ]
+    },
+    {
+      id:'en60456_2005', label:'EN 60456:2005', title:'nur IEC-Markt – historisch', tierType:'select', tiers:KG_ALL.slice(0,4), badge:'historisch',
+      legal:'nur noch für Prüfungen nach IEC → siehe IEC 60456:2010 · Prüfzeit je Gerät: 2–3 Wochen + Vorlaufzeit',
+      items:[
+        {id:'base', name:'Label-Verifikation nach Kapazität', hours:{k64:20,k74:21,k84:22,k94:23}, def:true},
+      ]
+    },
+    {
+      id:'iec60456_2024', label:'IEC 60456:2024 Ed. 6.0', title:'Funktionsprüfung – zyklusbasiert (1/3/5 Zyklen)', tierType:'kgcycle', cycles:[1,3,5],
+      legal:'Basis: Waschmaschine bis max. 8 kg Beladung im Baumwollprogramm; Zusatzaufwand &gt; 8 kg je kg Beladung · Prüfzeit je Gerät: 2–5 Wochen + Vorlaufzeit je nach Prüfumfang',
+      items:[
+        {id:'handling', name:'Prüfmuster-Handling &amp; Vorbereitung der Prüfungen', hoursFixed:4, def:true},
+        {id:'report', name:'Erstellung eines Prüfberichtes', hoursFixed:1, def:true},
+        {id:'stdclean', name:'Standard Cleaning Performance (Baumwollprogramm)', hours:{1:3,3:9,5:15}, perKg:{1:0.25,3:0.75,5:1.25}, def:true},
+        {id:'coldclean', name:'Cold Water Cleaning Performance (Baumwollprogramm)', hours:{1:3,3:9,5:15}, perKg:{1:0.25,3:0.75,5:1.25}, def:true},
+        {id:'woolclean', name:'Wool Cleaning Performance (1,0 – 3,0 kg)', hours:{1:2,3:6,5:9}, def:true},
+        {id:'woolshrink', name:'Zusatz: Wool Shrinkage (1,0 – 3,0 kg, Prüfung mit 4 Zyklen)', hoursFixed:10, def:false},
+        {id:'gentlecotton', name:'Gentleness of Action (Baumwollprogramm)', hours:{1:1.5,3:4.5,5:7.5}, perKg:{1:0.25,3:0.5,5:0.75}, def:true},
+        {id:'lasrinse', name:'LAS Rinsing Performance', hours:{1:0.75,3:2.25,5:3.75}, def:true},
+        {id:'alkrinse', name:'Alkalinity Rinsing Performance', hours:{1:0,3:1.5,5:2.5}, perKg:{1:0,3:0.5,5:1}, def:true},
+        {id:'washtemp', name:'Washload Temperature', hours:{1:0.25,3:0.75,5:1.25}, def:true},
+        {id:'lpm', name:'Low Power Modes (Off-, Left-on-, Standby-mode und Delay Start)', hoursFixed:4, def:true},
+        {id:'gentlewool', name:'Zusatz: Gentleness of Action (Wollprogramm, 1,0 – 3,0 kg)', hours:{1:1,3:3,5:5}, def:false},
+        {id:'normcycle', name:'Zusatz: Normalisierung der Wäsche nach jedem Zyklus (1h je Zyklus)', hours:{1:1,3:3,5:5}, def:false},
+      ]
+    }
+  ],
+  dryer: [
+    {
+      id:'en61121', label:'EN 61121:2013+A11/2019', title:'Label-Prüfung – aktuell', tierType:'select', tiers:KG_ALL.slice(0,4),
+      legal:'VO (EU) 932/2012 Anh. III + VO (EU) 392/2012 Anh. V/VI bzw. VO (EU) 2023/2533 Anh. II Nr. 1–4 + III + VO (EU) 2023/2534 Anh. II+IV · Prüfzeit je Gerät: 3–4 Wochen + Vorlaufzeit',
+      items:[
+        {id:'base', name:'Label-Verifikation nach Kapazität', hours:{k64:15,k74:16,k84:16,k94:16}, def:true},
+        {id:'lpm2023', name:'Low Power Modes nach VO (EU) 2023/2533 (aktuell)', hoursFixed:4, def:true},
+        {id:'lpm2012', name:'Low Power Modes nach VO (EU) 932/2012 (alt, alternativ statt 2023er-Variante)', hoursFixed:1, def:false},
+        {id:'doku', name:'Zusatzaufwand Überprüfung Dokumentationsanforderungen', hoursFixed:1, def:false},
+      ],
+      note:'Kapazitäten über 9 kg nur nach Anfrage – Zusatzaufwand ca. +5 h (Wäsche-Handling: Vorbereiten, Anfeuchten, Konditionieren, Beladen).'
+    }
+  ],
+  washerdryer: [
+    {
+      id:'en62512', label:'EN IEC 62512:2020/A11:2020+A12:2023', title:'Label-Prüfung – aktuell', tierType:'select', tiers:KG_ALL.slice(0,5),
+      legal:'VO (EU) 2019/2023 Anh. II Nr. 3–6 + VO (EU) 2019/2014 Anh. II · Prüfzeit je Gerät: 3,5–4,5 Wochen + Vorlaufzeit',
+      items:[
+        {id:'base', name:'Label-Verifikation nach Kapazität', hours:{k64:59,k74:61.5,k84:63.5,k94:66.5,k104:69.5}, def:true},
+        {id:'lpm', name:'Low Power Modes – Messung Standby-Werte', hoursFixed:4, def:true},
+        {id:'doku', name:'Zusatzaufwand Überprüfung Dokumentationsanforderungen', hoursFixed:1, def:false},
+      ]
+    },
+    {
+      id:'en50229', label:'EN 50229:2015 + AC:2016', title:'historisch (z.B. SANS)', tierType:'select', tiers:KG_ALL.slice(0,5), badge:'historisch',
+      legal:'Richtlinie 96/60/EG, u.a. SANS – historisch/Drittmarkt · Prüfzeit je Gerät: 3,5–4,5 Wochen + Vorlaufzeit',
+      items:[
+        {id:'base', name:'Label-Verifikation nach Kapazität', hours:{k64:27,k74:28,k84:29,k94:30,k104:31}, def:true},
+      ]
+    }
+  ]
+};
+
+let pqDevice=null, pqStandardObj=null;
+
+function initPQDeviceGrid(){
+  document.getElementById('pq-device-grid').innerHTML = PQ_APPLIANCES.map(d=>
+    `<div class="device-card ${pqDevice===d.id?'selected':''}" onclick="selectPQDevice('${d.id}')">
+      <div class="dc-norm">${d.norm}</div>
+      <div class="dc-name">${d.name}</div>
+    </div>`
+  ).join('');
+}
+
+function selectPQDevice(id){
+  pqDevice=id; pqStandardObj=null;
+  initPQDeviceGrid();
+  document.getElementById('pq-standard-card').style.display='block';
+  document.getElementById('pq-params-card').style.display='none';
+  document.getElementById('pq-items-card').style.display='none';
+  document.getElementById('pq-rate-card').style.display='none';
+  document.getElementById('pq-calc-btn').style.display='none';
+  renderPQStandardGrid();
+  document.getElementById('pq-standard-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderPQStandardGrid(){
+  const list = PQ_STANDARDS[pqDevice]||[];
+  document.getElementById('pq-standard-grid').innerHTML = list.map(s=>
+    `<div class="device-card ${pqStandardObj&&pqStandardObj.id===s.id?'selected':''}" onclick="selectPQStandard('${s.id}')">
+      <div class="dc-norm">${s.label}${s.badge?`<span class="pq-badge ${s.badge==='historisch'?'old':'draft'}">${s.badge}</span>`:''}</div>
+      <div class="dc-name">${s.title}</div>
+    </div>`
+  ).join('');
+}
+
+function selectPQStandard(id){
+  pqStandardObj = (PQ_STANDARDS[pqDevice]||[]).find(s=>s.id===id);
+  renderPQStandardGrid();
+  document.getElementById('pq-standard-legal').innerHTML = pqStandardObj.legal||'';
+  renderPQParams();
+  document.getElementById('pq-params-card').style.display='block';
+  document.getElementById('pq-items-card').style.display='block';
+  document.getElementById('pq-rate-card').style.display='block';
+  document.getElementById('pq-calc-btn').style.display='block';
+  renderPQItems();
+  const noteEl = document.getElementById('pq-note');
+  if(pqStandardObj.note){ noteEl.style.display='block'; noteEl.innerHTML=pqStandardObj.note; }
+  else { noteEl.style.display='none'; }
+  document.getElementById('pq-params-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderPQParams(){
+  const el = document.getElementById('pq-params');
+  if(pqStandardObj.tierType==='select'){
+    el.innerHTML = `<div class="field">
+      <label>Kapazität</label>
+      <div class="sw"><select id="pq_tier" onchange="renderPQItems()">
+        ${pqStandardObj.tiers.map(t=>`<option value="${t.id}">${t.label}</option>`).join('')}
+      </select></div>
+    </div>`;
+  } else if(pqStandardObj.tierType==='kgcycle'){
+    el.innerHTML = `<div class="field">
+      <label>Prüfzyklen</label>
+      <div class="sw"><select id="pq_cycle" onchange="renderPQItems()">
+        ${pqStandardObj.cycles.map(c=>`<option value="${c}">${c} Zyklus/Zyklen</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="field">
+      <label>Beladung (kg, Baumwollprogramm)</label>
+      <input type="number" id="pq_kg" value="8" min="1" max="20" step="0.5" oninput="renderPQItems()">
+      <span class="hint">Basis bis 8 kg · darüber Zusatzaufwand je kg</span>
+    </div>`;
+  }
+}
+
+function pqCtx(){
+  const ctx={};
+  if(pqStandardObj.tierType==='select'){
+    ctx.tierId = document.getElementById('pq_tier').value;
+  } else if(pqStandardObj.tierType==='kgcycle'){
+    ctx.cycle = parseInt(document.getElementById('pq_cycle').value);
+    const kg = parseFloat(document.getElementById('pq_kg').value)||8;
+    ctx.extraKg = Math.max(0, Math.ceil(kg-8));
+  }
+  return ctx;
+}
+
+function pqItemHours(item, ctx){
+  let h=0;
+  if(item.hoursFixed!=null) h = item.hoursFixed;
+  else if(item.hours){
+    h = ctx.cycle!=null ? (item.hours[ctx.cycle]||0) : (item.hours[ctx.tierId]||0);
+  }
+  if(item.perKg && ctx.extraKg>0){
+    const s = ctx.cycle!=null ? (item.perKg[ctx.cycle]||0) : 0;
+    h += s*ctx.extraKg;
+  }
+  return h;
+}
+
+function renderPQItems(){
+  const ctx = pqCtx();
+  const el = document.getElementById('pq-items');
+  el.innerHTML = pqStandardObj.items.map(it=>{
+    const h = pqItemHours(it, ctx);
+    return `<label class="toggle-item ${it.def?'on':''}" style="min-width:280px">
+      <input type="checkbox" data-pq-item="${it.id}" ${it.def?'checked':''} onchange="this.closest('.toggle-item').classList.toggle('on',this.checked)">
+      ${it.name} <span class="item-hours">${h.toLocaleString('de-DE')} h</span>
+    </label>`;
+  }).join('');
+}
+
+function calculatePQ(){
+  if(!pqStandardObj){ alert('Bitte zuerst Gerätetyp und Prüfnorm auswählen!'); return; }
+  const ctx = pqCtx();
+  const rate = parseFloat(document.getElementById('pq_lab_rate').value)||168;
+  const samples = parseInt(document.getElementById('pq_samples').value)||1;
+  const checked = Array.from(document.querySelectorAll('#pq-items input[data-pq-item]:checked')).map(cb=>cb.dataset.pqItem);
+  const rows = pqStandardObj.items.filter(it=>checked.includes(it.id)).map(it=>({name:it.name, hours:pqItemHours(it,ctx)}));
+  const totalHours = rows.reduce((s,r)=>s+r.hours,0);
+  const totalCost = totalHours*rate*samples;
+
+  document.getElementById('pq-summary-row').innerHTML = `
+    <div class="sum-card sum-purple"><div class="val">${totalHours.toLocaleString('de-DE')} h</div><div class="lbl">Gesamtaufwand</div></div>
+    <div class="sum-card sum-blue"><div class="val">${Math.round(totalCost).toLocaleString('de-DE')} €</div><div class="lbl">Gesamtkosten (${samples} Baumuster)</div></div>
+    <div class="sum-card sum-green"><div class="val">${rows.length}</div><div class="lbl">Prüfpositionen</div></div>
+    <div class="sum-card sum-gray" style="font-size:12px;padding-top:20px">${pqStandardObj.label}</div>
+  `;
+
+  const fmt = n=>Math.round(n).toLocaleString('de-DE')+' €';
+  document.getElementById('pq-table-wrap').innerHTML = `<div class="card">
+    <table class="test-table"><thead><tr><th>Prüfposition</th><th style="text-align:right">Stunden</th><th style="text-align:right">Kosten (${samples}x)</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr><td class="test-name">${r.name}</td><td class="hours-cell">${r.hours.toLocaleString('de-DE')} h</td><td class="hours-cell">${fmt(r.hours*rate*samples)}</td></tr>`).join('')}
+      <tr style="background:var(--gray-50)"><td style="font-weight:700">Gesamt</td><td class="hours-cell" style="color:var(--blue)">${totalHours.toLocaleString('de-DE')} h</td><td class="hours-cell" style="color:var(--blue)">${fmt(totalCost)}</td></tr>
+    </tbody></table>
+  </div>`;
+
+  const ftEl = document.getElementById('pq-fulltest-note');
+  if(pqStandardObj.fullTest && ctx.tierId){
+    const ft = pqStandardObj.fullTest[ctx.tierId];
+    ftEl.style.display='block';
+    ftEl.innerHTML = `<strong>Hinweis:</strong> ${pqStandardObj.fullTestLabel||'Referenz-Listenpreis'}: <strong>${ft} h</strong> (${fmt(ft*rate*samples)}). Die obige Aufwandssumme basiert auf den einzeln angehakten Prüfpositionen und kann je nach Beauftragungsumfang vom pauschalen Gesamtpaket-Listenpreis abweichen (Aufschlag Berichterstellung bei Teilaspekten möglich).`;
+  } else {
+    ftEl.style.display='none';
+  }
+
+  document.getElementById('pq-section').style.display='none';
+  document.getElementById('pq-results').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetPQ(){
+  pqDevice=null; pqStandardObj=null;
+  document.getElementById('pq-results').style.display='none';
+  document.getElementById('pq-section').style.display='block';
+  document.getElementById('pq-standard-card').style.display='none';
+  document.getElementById('pq-params-card').style.display='none';
+  document.getElementById('pq-items-card').style.display='none';
+  document.getElementById('pq-rate-card').style.display='none';
+  document.getElementById('pq-calc-btn').style.display='none';
+  initPQDeviceGrid();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // Init
