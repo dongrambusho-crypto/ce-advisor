@@ -976,17 +976,19 @@ function calculate(){
   });
 
   // Aufwandsreduktion CE-Sicherheit: alle Prüfstunden um 20 % reduziert
-  const CE_REDUCTION = 0.8;
+  // (EN 60335-1 Grundaufwand zusätzlich um weitere 20 % reduziert -> Faktor 0,8 x 0,8 = 0,64)
+  const CE_REDUCTION   = 0.8;
+  const BASE_REDUCTION = 0.8; // zusätzlicher Abschlag nur auf EN 60335-1 Basisnorm
   const round05 = n => Math.round(n*2)/2;
-  const reduceHours = arr => arr.map(t => ({
+  const reduceHours = (arr, factor) => arr.map(t => ({
     ...t,
-    hmin: t.hmin!=null ? round05(t.hmin*CE_REDUCTION) : t.hmin,
-    hmax: t.hmax!=null ? round05(t.hmax*CE_REDUCTION) : t.hmax,
+    hmin: t.hmin!=null ? round05(t.hmin*factor) : t.hmin,
+    hmax: t.hmax!=null ? round05(t.hmax*factor) : t.hmax,
   }));
-  const basePlanR  = reduceHours(basePlan);
-  const part2PlanR = reduceHours(part2Plan);
-  const emcPlanR   = reduceHours(emcPlan);
-  const redPlanR   = reduceHours(redPlan);
+  const basePlanR  = reduceHours(basePlan,  CE_REDUCTION*BASE_REDUCTION);
+  const part2PlanR = reduceHours(part2Plan, CE_REDUCTION);
+  const emcPlanR   = reduceHours(emcPlan,   CE_REDUCTION);
+  const redPlanR   = reduceHours(redPlan,   CE_REDUCTION);
 
   // Hour sums (auf Basis der um 20 % reduzierten Prüfstunden)
   const sum = (arr, filt=()=>true) => arr.filter(filt).reduce((a,t)=>({min:a.min+(t.hmin||0),max:a.max+(t.hmax||0)}),{min:0,max:0});
